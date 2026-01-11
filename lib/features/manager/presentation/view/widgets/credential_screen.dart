@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:gdrive_tutorial/core/consts.dart';
+import 'package:gdrive_tutorial/core/secure_storage_helper.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/manager_screen.dart';
 import 'package:gdrive_tutorial/services/firestore_auth_service.dart';
 
@@ -109,6 +111,29 @@ class _CredentialScreenState extends State<CredentialScreen> {
     return match?.group(1);
   }
 
+  /// Verify that credentials have been persisted to SecureStorage
+  /// This fixes race conditions in release builds where EncryptedSharedPreferences
+  /// may have latency between write and read operations
+  Future<void> _verifyCredentialsPersisted(String expectedSpreadsheetId) async {
+    const maxRetries = 30; // 30 * 100ms = 3 seconds max wait
+    const retryDelay = Duration(milliseconds: 100);
+
+    for (int i = 0; i < maxRetries; i++) {
+      final storedId = await SecureStorageHelper.read(kSpreadsheetId);
+
+      if (storedId == expectedSpreadsheetId) {
+        // Successfully verified persistence
+        return;
+      }
+
+      // Wait a bit and retry
+      await Future.delayed(retryDelay);
+    }
+
+    // If we get here, verification failed but we'll proceed anyway
+    // The ManagerScreen will handle the missing credentials case
+  }
+
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -160,6 +185,11 @@ class _CredentialScreenState extends State<CredentialScreen> {
         workLatitude: latitude,
         workLongitude: longitude,
       );
+
+      // IMPORTANT: Verify data persistence before navigation
+      // This fixes the race condition in release builds where
+      // SecureStorage write may not complete before navigation
+      await _verifyCredentialsPersisted(spreadsheetId);
 
       if (!mounted) return;
 

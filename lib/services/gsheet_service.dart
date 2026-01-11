@@ -24,9 +24,13 @@ class GSheetService {
 
   /// Initialize Google Sheets connection (low-level)
   static Future<void> gSheetInit({String? spreadsheetId}) async {
-    final targetId = spreadsheetId!;
-    _gsheetController = await _gsheets.spreadsheet(targetId);
-    log("GSheet initialized with ID: $targetId");
+    if (spreadsheetId == null || spreadsheetId.isEmpty) {
+      throw Exception(
+        'SpreadsheetId is null or empty. Please set up your credentials first.',
+      );
+    }
+    _gsheetController = await _gsheets.spreadsheet(spreadsheetId);
+    log("GSheet initialized with ID: $spreadsheetId");
   }
 
   /// Initialize Google Sheets connection (high-level)
