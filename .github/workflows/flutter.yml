@@ -30,8 +30,12 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "# CI Environment - dummy values for testing" > .env
-          echo "GEMINI_API_KEY=test_key_for_ci" >> .env
+          # Decode Base64 credentials and write to .env
+          # GSHEET_CREDENTIALS is Base64 encoded to handle special JSON characters
+          echo -n "GSHEET_CREDENTIALS=" > .env
+          echo "${{ secrets.GSHEET_CREDENTIALS_BASE64 }}" | base64 -d >> .env
+          echo "" >> .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
 
       # Decode Firebase configuration files from GitHub Secrets
       - name: Create google-services.json
@@ -42,6 +46,9 @@ jobs:
 
       - name: Install Dependencies
         run: flutter pub get
+
+      - name: Generate Launcher Icons
+        run: dart run flutter_launcher_icons
 
       - name: Generate Native Splash
         run: dart run flutter_native_splash:create

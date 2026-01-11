@@ -9,9 +9,27 @@ import 'package:gsheets/gsheets.dart';
 class GSheetService {
   // ==================== LOW-LEVEL GSHEET SETUP ====================
 
-  static final String _credentials = dotenv.env['GSHEET_CREDENTIALS']!;
+  // Use lazy-loaded credentials to avoid null check errors during app startup
+  // dotenv.load() must be called before using GSheetService
+  static String? _cachedCredentials;
+  static String get _credentials {
+    _cachedCredentials ??= dotenv.env['GSHEET_CREDENTIALS'];
+    if (_cachedCredentials == null || _cachedCredentials!.isEmpty) {
+      throw Exception(
+        'GSHEET_CREDENTIALS not found in .env file. '
+        'Make sure dotenv.load() is called before using GSheetService.',
+      );
+    }
+    return _cachedCredentials!;
+  }
 
-  static final GSheets _gsheets = GSheets(_credentials);
+  // Lazy-loaded GSheets instance
+  static GSheets? _gsheetsInstance;
+  static GSheets get _gsheets {
+    _gsheetsInstance ??= GSheets(_credentials);
+    return _gsheetsInstance!;
+  }
+
   static List dataFromSheet = [];
 
   // ignore: prefer_typing_uninitialized_variables
