@@ -33,9 +33,8 @@ jobs:
           # Decode Base64 credentials and write to .env
           # GSHEET_CREDENTIALS is Base64 encoded to handle special JSON characters
           echo -n "GSHEET_CREDENTIALS=" > .env
-          echo "${{ secrets.GSHEET_CREDENTIALS_BASE64 }}" | base64 -d >> .env
+          echo "${{ secrets.GSHEET_CREDENTIALS }}" | base64 -d >> .env
           echo "" >> .env
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
 
       # Decode Firebase configuration files from GitHub Secrets
       - name: Create google-services.json
@@ -64,3 +63,4 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+ 
