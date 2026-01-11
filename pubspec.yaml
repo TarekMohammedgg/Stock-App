@@ -76,7 +76,6 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/images/stock-logo.png"
 flutter_native_splash:
-  android_gravity: fill
   android: true
   ios: true
   web: false

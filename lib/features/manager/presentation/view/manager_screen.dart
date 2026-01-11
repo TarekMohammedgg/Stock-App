@@ -235,6 +235,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
 
     // Process Low Stock
     int lowCount = loadedProducts.where((p) {
+      if (mounted) return true;
       final name = p[kProductName]?.toString() ?? '';
       if (name.isEmpty) return false; // Ignore empty/header rows
 
