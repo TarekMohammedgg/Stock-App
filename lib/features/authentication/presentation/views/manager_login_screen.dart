@@ -80,11 +80,12 @@ class _ManagerLoginScreenState extends State<ManagerLoginScreen> {
             log('✅ Credentials synced to secure storage');
           }
 
-          // Navigate to home screen
+          // Navigate to home screen - clear entire navigation stack
           if (!mounted) return;
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const ManagerScreen()),
+            (route) => false, // Remove all previous routes
           );
         } else {
           // Firebase doesn't have credentials - check prefs as fallback
@@ -107,19 +108,21 @@ class _ManagerLoginScreenState extends State<ManagerLoginScreen> {
           if (!mounted) return;
 
           if (hasPrefsCredentials) {
-            // Has credentials in prefs, navigate to home
-            Navigator.pushReplacement(
+            // Has credentials in prefs, navigate to home - clear stack
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (_) => const ManagerScreen()),
+              (route) => false,
             );
           } else {
             // No credentials anywhere - navigate to credential setup
-            Navigator.pushReplacement(
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
                 builder: (_) =>
                     CredentialScreen(username: _usernameController.text.trim()),
               ),
+              (route) => false,
             );
           }
         }

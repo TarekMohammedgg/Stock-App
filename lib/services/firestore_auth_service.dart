@@ -635,7 +635,7 @@ class FirestoreAuthService {
   }
 
   /// Save employee data locally
-  /// REMOVED: accessToken parameter
+  /// Also fetches manager's work location for attendance verification
   Future<void> _saveEmployeeLocalData(
     Map<String, dynamic> employeeData,
     String employeeId,
@@ -655,6 +655,40 @@ class FirestoreAuthService {
         employeeData[kEmployeePermissions] as Map<String, dynamic>?;
     if (permissions != null) {
       await CacheHelper.saveData('Permissions', permissions.toString());
+    }
+
+    // Fetch manager's work location from Firestore
+    final managerEmail = employeeData[kEmployeeManagerEmail] as String?;
+    if (managerEmail != null && managerEmail.isNotEmpty) {
+      try {
+        final managerDoc = await _firestore
+            .collection(kManagersCollection)
+            .doc(managerEmail)
+            .get();
+
+        if (managerDoc.exists) {
+          final managerData = managerDoc.data();
+          final workLocation =
+              managerData?[kManagerWorkLocation] as Map<String, dynamic>?;
+
+          if (workLocation != null) {
+            final latitude = workLocation[kWorkLatitude] as double?;
+            final longitude = workLocation[kWorkLongitude] as double?;
+
+            if (latitude != null && longitude != null) {
+              await CacheHelper.saveData(kPrefWorkLatitude, latitude);
+              await CacheHelper.saveData(kPrefWorkLongitude, longitude);
+              log(
+                '✅ Saved manager work location to prefs: $latitude, $longitude',
+              );
+            }
+          } else {
+            log('⚠️ Manager work location not set');
+          }
+        }
+      } catch (e) {
+        log('⚠️ Error fetching manager work location: $e');
+      }
     }
 
     log('✅ Saved employee data locally');
@@ -888,21 +922,31 @@ class FirestoreAuthService {
   // ==================== MANAGER CREDENTIALS ====================
 
   /// Update manager credentials/config in Firestore
-  /// Note: This updates the IDs/URLs but no longer handles access tokens
+  /// Includes URLs and optional work location
   Future<void> updateManagerCredentials({
     required String username,
     required String spreadsheetId,
     required String driveFolderId,
     required String appScriptUrl,
+    double? workLatitude,
+    double? workLongitude,
   }) async {
     try {
       log('📝 Updating credentials for manager: $username');
 
-      final data = {
+      final data = <String, dynamic>{
         kManagerSpreadsheetId: spreadsheetId,
         kManagerDriveFolderId: driveFolderId,
         kManagerAppScriptUrl: appScriptUrl,
       };
+
+      // Add work location map if provided
+      if (workLatitude != null && workLongitude != null) {
+        data[kManagerWorkLocation] = {
+          kWorkLatitude: workLatitude,
+          kWorkLongitude: workLongitude,
+        };
+      }
 
       // Update Firestore (Querying by username field)
       final querySnapshot = await _firestore
@@ -918,10 +962,16 @@ class FirestoreAuthService {
       final docId = querySnapshot.docs.first.id;
       await _firestore.collection(kManagersCollection).doc(docId).update(data);
 
-      // Update secure storage
+      // Update secure storage for URLs
       await SecureStorageHelper.write(kSpreadsheetId, spreadsheetId);
       await SecureStorageHelper.write(kDriveFolderId, driveFolderId);
       await SecureStorageHelper.write(kAppScriptUrl, appScriptUrl);
+
+      // Save work location to SharedPrefs for quick loading
+      if (workLatitude != null && workLongitude != null) {
+        await CacheHelper.saveData(kPrefWorkLatitude, workLatitude);
+        await CacheHelper.saveData(kPrefWorkLongitude, workLongitude);
+      }
 
       log('✅ Credentials updated successfully');
     } catch (e) {

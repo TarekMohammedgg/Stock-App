@@ -103,11 +103,12 @@ class _EmployeeLoginScreenState extends State<EmployeeLoginScreen> {
           }
         }
 
-        // Navigate to employee screen
+        // Navigate to employee screen - clear entire navigation stack
         if (!mounted) return;
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const EmployeeScreen()),
+          (route) => false,
         );
       } else {
         _showError('Invalid username or password'.tr());

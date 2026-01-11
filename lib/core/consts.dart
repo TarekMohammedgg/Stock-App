@@ -38,6 +38,15 @@ const kManagerLastTokenRefresh = "lastTokenRefresh";
 const kRoles = "Roles";
 const kPermissions = "Permissions";
 
+// Work Location - Firestore fields (map inside manager document)
+const kManagerWorkLocation = "workLocation";
+const kWorkLatitude = "latitude";
+const kWorkLongitude = "longitude";
+
+// Work Location - SharedPrefs keys for quick loading
+const kPrefWorkLatitude = "work_latitude";
+const kPrefWorkLongitude = "work_longitude";
+
 // Employee Fields
 const kEmployeeIdField = "employeeId";
 const kEmployeeUsername = "username";

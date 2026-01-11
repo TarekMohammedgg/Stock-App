@@ -17,8 +17,6 @@ class EmployeeAttendance extends StatefulWidget {
 }
 
 class _EmployeeAttendanceState extends State<EmployeeAttendance> {
-  // --- Constants ---
-
   // --- State Variables ---
   DateTime? checkInTime;
   DateTime? checkOutTime;
@@ -32,6 +30,10 @@ class _EmployeeAttendanceState extends State<EmployeeAttendance> {
   Map<String, dynamic> attendanceHistory = {};
   String? employeeId;
   bool isDataLoaded = false;
+
+  // Work location from manager (loaded from SharedPrefs)
+  double? _workLatitude;
+  double? _workLongitude;
 
   @override
   void initState() {
@@ -66,6 +68,22 @@ class _EmployeeAttendanceState extends State<EmployeeAttendance> {
         });
         return;
       }
+
+      // Load work location from SharedPrefs (saved during employee login)
+      _workLatitude = CacheHelper.getData(kPrefWorkLatitude);
+      _workLongitude = CacheHelper.getData(kPrefWorkLongitude);
+
+      if (_workLatitude == null || _workLongitude == null) {
+        log('⚠️ Work location not found in cache');
+        setState(() {
+          locationStatus = 'Work location not configured. Contact your manager.'
+              .tr();
+          isDataLoaded = true;
+        });
+        return;
+      }
+
+      log('📍 Work location loaded: $_workLatitude, $_workLongitude');
 
       String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       log('📅 Loading attendance for: $today, Employee: $employeeId');
