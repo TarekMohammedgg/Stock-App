@@ -11,7 +11,7 @@ import 'package:gdrive_tutorial/services/firestore_auth_service.dart';
 import 'package:gdrive_tutorial/features/calendar_view/presentation/view/calendar_view.dart';
 import 'package:gdrive_tutorial/core/consts.dart';
 import 'package:gdrive_tutorial/core/permission_helper.dart';
-import 'package:gdrive_tutorial/features/insights/presentation/view/analytics_screen.dart';
+import 'package:gdrive_tutorial/features/insights/presentation/view/insight_screen.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/manager_employee_dashboard.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/allProducts.dart';
 import 'package:gdrive_tutorial/features/employee/presentation/view/employee_screen.dart';

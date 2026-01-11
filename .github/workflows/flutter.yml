@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout My Code 
+      - name: Checkout My Code
         uses: actions/checkout@v4
 
       - name: Setup Java 23
@@ -22,7 +22,7 @@ jobs:
         with:
           distribution: 'temurin' # Use the Eclipse Temurin distribution
           java-version: '23'
-
+ 
       - name: Install Flutter Version 3.32.4
         uses: subosito/flutter-action@v2
         with:
@@ -43,3 +43,5 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+          

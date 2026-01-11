@@ -14,7 +14,7 @@ import 'package:gdrive_tutorial/features/authentication/presentation/views/emplo
 import 'package:gdrive_tutorial/features/authentication/presentation/views/manager_login_screen.dart';
 import 'package:gdrive_tutorial/features/authentication/presentation/views/manager_signup_screen.dart';
 import 'package:gdrive_tutorial/features/authentication/presentation/views/logout_screen.dart';
-import 'package:gdrive_tutorial/features/insights/presentation/view/analytics_screen.dart';
+import 'package:gdrive_tutorial/features/insights/presentation/view/insight_screen.dart';
 import 'package:gdrive_tutorial/features/calendar_view/presentation/view/calendar_view.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/manager_employee_dashboard.dart';
 import 'package:gdrive_tutorial/features/search_products/presentation/view/search_items_screen.dart';

@@ -123,11 +123,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () => Navigator.pushNamed(context, ChatbotScreen.id),
-      //   backgroundColor: colorScheme.primary,
-      //   child: const Icon(Icons.auto_awesome),
-      // ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.pushNamed(context, ChatbotScreen.id),
+        backgroundColor: colorScheme.primary,
+        child: const Icon(Icons.auto_awesome),
+      ),
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: isLoading
