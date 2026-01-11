@@ -22,11 +22,16 @@ jobs:
         with:
           distribution: 'temurin' # Use the Eclipse Temurin distribution
           java-version: '23'
- 
+
       - name: Install Flutter Version 3.32.4
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.4' # Use the required Flutter version
+
+      - name: Create .env file
+        run: |
+          echo "# CI Environment - dummy values for testing" > .env
+          echo "GEMINI_API_KEY=test_key_for_ci" >> .env
 
       - name: Install Dependencies
         run: flutter pub get
@@ -44,4 +49,3 @@ jobs:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-          

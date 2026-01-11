@@ -14,7 +14,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:gdrive_tutorial/services/firestore_auth_service.dart';
 import 'package:gdrive_tutorial/services/gsheet_service.dart';
 import 'package:gdrive_tutorial/services/gdrive_service.dart';
-import 'package:gdrive_tutorial/services/analytics_service.dart';
 import 'package:gdrive_tutorial/services/insights_service.dart';
 
 // Core
