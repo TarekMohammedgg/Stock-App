@@ -1,7 +1,7 @@
 import 'dart:developer';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:gdrive_tutorial/core/consts.dart';
-import 'package:gdrive_tutorial/core/secure_storage_helper.dart';
+import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:gsheets/gsheets.dart';
 
 /// Unified service for Google Sheets integration using service account
@@ -41,7 +41,7 @@ class GSheetService {
     }
 
     try {
-      final spreadsheetId = await SecureStorageHelper.read(kSpreadsheetId);
+      final spreadsheetId = CacheHelper.getData(kSpreadsheetId) as String?;
       log(
         '📡 Initializing GSheet with SpreadsheetId: ${spreadsheetId ?? "default (fallback)"}',
       );

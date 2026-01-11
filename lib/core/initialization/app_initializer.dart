@@ -6,7 +6,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:gdrive_tutorial/core/consts.dart';
 import 'package:gdrive_tutorial/core/helper.dart';
 import 'package:gdrive_tutorial/core/internet_connectino_helper.dart';
-import 'package:gdrive_tutorial/core/secure_storage_helper.dart';
 import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:gdrive_tutorial/features/authentication/presentation/views/login_selection_screen.dart';
 import 'package:gdrive_tutorial/features/employee/presentation/view/employee_screen.dart';
@@ -99,9 +98,9 @@ class AppInitializer {
       final userType = CacheHelper.getData(kUserType);
 
       if (userType == kUserTypeManager) {
-        final spreadsheetId = await SecureStorageHelper.read(kSpreadsheetId);
-        final folderId = await SecureStorageHelper.read(kDriveFolderId);
-        final appScriptUrl = await SecureStorageHelper.read(kAppScriptUrl);
+        final spreadsheetId = CacheHelper.getData(kSpreadsheetId) as String?;
+        final folderId = CacheHelper.getData(kDriveFolderId) as String?;
+        final appScriptUrl = CacheHelper.getData(kAppScriptUrl) as String?;
 
         if (spreadsheetId == null ||
             spreadsheetId.isEmpty ||

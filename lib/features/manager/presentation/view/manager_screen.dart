@@ -22,7 +22,6 @@ import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/summa
 
 import 'package:gdrive_tutorial/services/gsheet_service.dart';
 import 'package:gdrive_tutorial/features/authentication/presentation/views/logout_screen.dart';
-import 'package:gdrive_tutorial/core/secure_storage_helper.dart';
 import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/credential_screen.dart';
 
@@ -70,10 +69,10 @@ class _ManagerScreenState extends State<ManagerScreen> {
   }
 
   Future<void> _checkCredentialsAndLoad() async {
-    // Check if credentials exist in secure storage
-    final spreadsheetId = await SecureStorageHelper.read(kSpreadsheetId);
-    final folderId = await SecureStorageHelper.read(kDriveFolderId);
-    final appScriptUrl = await SecureStorageHelper.read(kAppScriptUrl);
+    // Check if credentials exist in SharedPreferences
+    final spreadsheetId = CacheHelper.getData(kSpreadsheetId) as String?;
+    final folderId = CacheHelper.getData(kDriveFolderId) as String?;
+    final appScriptUrl = CacheHelper.getData(kAppScriptUrl) as String?;
 
     // If any credential is missing or empty, navigate to credential screen
     if (spreadsheetId == null ||
@@ -542,7 +541,6 @@ class _ManagerScreenState extends State<ManagerScreen> {
           'Add Transaction'.tr(),
           style: TextStyle(color: colorScheme.onPrimary),
         ),
-        
       ),
     );
   }

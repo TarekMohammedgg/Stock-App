@@ -3,7 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 // import 'package:gdrive_tutorial/core/app_theme.dart';
 import 'package:gdrive_tutorial/core/consts.dart';
-import 'package:gdrive_tutorial/core/secure_storage_helper.dart';
+import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:gdrive_tutorial/features/employee/presentation/view/employee_screen.dart';
 import 'package:gdrive_tutorial/services/firestore_auth_service.dart';
 
@@ -48,11 +48,10 @@ class _EmployeeLoginScreenState extends State<EmployeeLoginScreen> {
 
       if (result != null) {
         // First check if credentials exist in prefs
-        final prefSpreadsheetId = await SecureStorageHelper.read(
-          kSpreadsheetId,
-        );
-        final prefFolderId = await SecureStorageHelper.read(kDriveFolderId);
-        final prefAppScriptUrl = await SecureStorageHelper.read(kAppScriptUrl);
+        final prefSpreadsheetId =
+            CacheHelper.getData(kSpreadsheetId) as String?;
+        final prefFolderId = CacheHelper.getData(kDriveFolderId) as String?;
+        final prefAppScriptUrl = CacheHelper.getData(kAppScriptUrl) as String?;
 
         final hasPrefsCredentials =
             prefSpreadsheetId != null &&
@@ -79,15 +78,15 @@ class _EmployeeLoginScreenState extends State<EmployeeLoginScreen> {
 
           if (managerCredentials != null) {
             // Save manager's credentials to employee's prefs
-            await SecureStorageHelper.write(
+            await CacheHelper.saveData(
               kSpreadsheetId,
               managerCredentials[kSpreadsheetId]!,
             );
-            await SecureStorageHelper.write(
+            await CacheHelper.saveData(
               kDriveFolderId,
               managerCredentials[kDriveFolderId]!,
             );
-            await SecureStorageHelper.write(
+            await CacheHelper.saveData(
               kAppScriptUrl,
               managerCredentials[kAppScriptUrl]!,
             );

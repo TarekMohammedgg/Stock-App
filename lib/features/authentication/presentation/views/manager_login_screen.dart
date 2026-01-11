@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/manager_screen.dart';
 import 'package:gdrive_tutorial/services/firestore_auth_service.dart';
 import 'package:gdrive_tutorial/core/consts.dart';
-import 'package:gdrive_tutorial/core/secure_storage_helper.dart';
+import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/credential_screen.dart';
 import 'package:gdrive_tutorial/features/authentication/presentation/views/manager_signup_screen.dart';
 
@@ -61,23 +61,21 @@ class _ManagerLoginScreenState extends State<ManagerLoginScreen> {
 
         if (hasAllCredentials) {
           // Firebase has credentials - check if they're in prefs
-          final prefSpreadsheetId = await SecureStorageHelper.read(
-            kSpreadsheetId,
-          );
-          final prefFolderId = await SecureStorageHelper.read(kDriveFolderId);
-          final prefAppScriptUrl = await SecureStorageHelper.read(
-            kAppScriptUrl,
-          );
+          final prefSpreadsheetId =
+              CacheHelper.getData(kSpreadsheetId) as String?;
+          final prefFolderId = CacheHelper.getData(kDriveFolderId) as String?;
+          final prefAppScriptUrl =
+              CacheHelper.getData(kAppScriptUrl) as String?;
 
           // Sync to prefs if not already there or different
           if (prefSpreadsheetId != spreadsheetId ||
               prefFolderId != driveFolderId ||
               prefAppScriptUrl != appScriptUrl) {
-            log('📥 Syncing Firebase credentials to secure storage...');
-            await SecureStorageHelper.write(kSpreadsheetId, spreadsheetId);
-            await SecureStorageHelper.write(kDriveFolderId, driveFolderId);
-            await SecureStorageHelper.write(kAppScriptUrl, appScriptUrl);
-            log('✅ Credentials synced to secure storage');
+            log('📥 Syncing Firebase credentials to SharedPreferences...');
+            await CacheHelper.saveData(kSpreadsheetId, spreadsheetId);
+            await CacheHelper.saveData(kDriveFolderId, driveFolderId);
+            await CacheHelper.saveData(kAppScriptUrl, appScriptUrl);
+            log('✅ Credentials synced to SharedPreferences');
           }
 
           // Navigate to home screen - clear entire navigation stack
@@ -89,13 +87,11 @@ class _ManagerLoginScreenState extends State<ManagerLoginScreen> {
           );
         } else {
           // Firebase doesn't have credentials - check prefs as fallback
-          final prefSpreadsheetId = await SecureStorageHelper.read(
-            kSpreadsheetId,
-          );
-          final prefFolderId = await SecureStorageHelper.read(kDriveFolderId);
-          final prefAppScriptUrl = await SecureStorageHelper.read(
-            kAppScriptUrl,
-          );
+          final prefSpreadsheetId =
+              CacheHelper.getData(kSpreadsheetId) as String?;
+          final prefFolderId = CacheHelper.getData(kDriveFolderId) as String?;
+          final prefAppScriptUrl =
+              CacheHelper.getData(kAppScriptUrl) as String?;
 
           final hasPrefsCredentials =
               prefSpreadsheetId != null &&

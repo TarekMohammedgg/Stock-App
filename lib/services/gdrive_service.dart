@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:gdrive_tutorial/core/consts.dart';
-import 'package:gdrive_tutorial/core/secure_storage_helper.dart';
+import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
@@ -15,10 +15,8 @@ class GDriveService {
   /// Upload image to Google Drive (low-level)
   /// Returns the image URL if successful, null otherwise
   Future<String?> _uploadImageLowLevel(File imageFile) async {
-    final String scriptUrl =
-        await SecureStorageHelper.read(kAppScriptUrl) ?? "";
-    final String folderId =
-        await SecureStorageHelper.read(kDriveFolderId) ?? "";
+    final String scriptUrl = CacheHelper.getData(kAppScriptUrl) ?? "";
+    final String folderId = CacheHelper.getData(kDriveFolderId) ?? "";
 
     try {
       log('Converting image to Base64...');

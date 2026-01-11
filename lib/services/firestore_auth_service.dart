@@ -532,7 +532,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:gdrive_tutorial/core/consts.dart';
 import 'package:gdrive_tutorial/core/shared_prefs.dart';
-import 'package:gdrive_tutorial/core/secure_storage_helper.dart';
 
 /// Unified service for Firestore-based authentication
 /// Supports both managers and employees
@@ -962,10 +961,11 @@ class FirestoreAuthService {
       final docId = querySnapshot.docs.first.id;
       await _firestore.collection(kManagersCollection).doc(docId).update(data);
 
-      // Update secure storage for URLs
-      await SecureStorageHelper.write(kSpreadsheetId, spreadsheetId);
-      await SecureStorageHelper.write(kDriveFolderId, driveFolderId);
-      await SecureStorageHelper.write(kAppScriptUrl, appScriptUrl);
+      // Update SharedPreferences for URLs (using CacheHelper instead of SecureStorage
+      // to avoid race conditions in release builds with EncryptedSharedPreferences)
+      await CacheHelper.saveData(kSpreadsheetId, spreadsheetId);
+      await CacheHelper.saveData(kDriveFolderId, driveFolderId);
+      await CacheHelper.saveData(kAppScriptUrl, appScriptUrl);
 
       // Save work location to SharedPrefs for quick loading
       if (workLatitude != null && workLongitude != null) {
