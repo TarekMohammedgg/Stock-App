@@ -33,6 +33,13 @@ jobs:
           echo "# CI Environment - dummy values for testing" > .env
           echo "GEMINI_API_KEY=test_key_for_ci" >> .env
 
+      # Decode Firebase configuration files from GitHub Secrets
+      - name: Create google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > android/app/google-services.json
+
+      - name: Create firebase_options.dart
+        run: echo "${{ secrets.FIREBASE_OPTIONS_DART }}" | base64 -d > lib/firebase_options.dart
+
       - name: Install Dependencies
         run: flutter pub get
 
@@ -42,10 +49,8 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-
