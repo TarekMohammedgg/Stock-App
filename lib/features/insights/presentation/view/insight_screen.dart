@@ -57,22 +57,35 @@ class _InsightsScreenState extends State<InsightsScreen> {
   void _selectPeriod(String period) {
     final now = DateTime.now();
     DateTime start = now;
-    DateTime end = now;
+    DateTime end = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
     switch (period) {
       case 'Today':
         start = DateTime(now.year, now.month, now.day);
+        end = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
       case 'Week':
-        start = now.subtract(Duration(days: now.weekday - 1));
+        // Start of current week (Monday)
+        start = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: now.weekday - 1));
+        end = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
       case 'Month':
         start = DateTime(now.year, now.month, 1);
+        end = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
       case 'Year':
         start = DateTime(now.year, 1, 1);
+        end = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
     }
+
+    log('📅 Selected Period: $period');
+    log('📅 Start Date: $start');
+    log('📅 End Date: $end');
 
     setState(() {
       selectedPeriod = period;
@@ -107,9 +120,22 @@ class _InsightsScreenState extends State<InsightsScreen> {
       endDate: endDate,
     );
 
+    log('📊 Total Sales: ${allSales.length}');
+    log(
+      '📊 Filtered Sales (${startDate.toString().split(' ')[0]} to ${endDate.toString().split(' ')[0]}): ${filteredSales.length}',
+    );
+
     topProduct = _intelligenceService.getMostSoldItem(sales: filteredSales);
     peakDay = _intelligenceService.findMostSoldDay(sales: filteredSales);
     peakTime = _intelligenceService.findPeakSalesTime(sales: filteredSales);
+
+    log(
+      '📊 Top Product: ${topProduct['productName']} (${topProduct['quantity']} units)',
+    );
+    log('📊 Peak Day: ${peakDay['date']} (${peakDay['unitsSold']} units)');
+    log(
+      '📊 Peak Time: ${peakTime['peakHourFormatted']} (${peakTime['unitsSold']} units)',
+    );
   }
 
   @override
@@ -379,10 +405,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildPeriodBtn('Today'.tr(), colorScheme),
-            _buildPeriodBtn('Week'.tr(), colorScheme),
-            _buildPeriodBtn('Month'.tr(), colorScheme),
-            _buildPeriodBtn('Year'.tr(), colorScheme),
+            _buildPeriodBtn('Today', 'Today'.tr(), colorScheme),
+            _buildPeriodBtn('Week', 'Week'.tr(), colorScheme),
+            _buildPeriodBtn('Month', 'Month'.tr(), colorScheme),
+            _buildPeriodBtn('Year', 'Year'.tr(), colorScheme),
           ],
         ),
         const SizedBox(height: 12),
@@ -394,12 +420,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildPeriodBtn(String label, ColorScheme colorScheme) {
-    bool isSelected = selectedPeriod == label;
+  Widget _buildPeriodBtn(String key, String label, ColorScheme colorScheme) {
+    bool isSelected = selectedPeriod == key;
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
-      onSelected: (_) => _selectPeriod(label),
+      onSelected: (_) => _selectPeriod(key),
       selectedColor: colorScheme.primary,
       labelStyle: TextStyle(
         color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
