@@ -279,8 +279,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
+**Tarek Mohammed**
+- GitHub: [@TarekMohammedgg](https://github.com/TarekMohammedgg)
+- LinkedIn: [@tarekmohammed](linkedin.com/in/tarekmohammed)
 
 ---
 
