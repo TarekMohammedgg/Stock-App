@@ -280,7 +280,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Tarek Mohammed**
-- GitHub: [@TarekMohammedgg](https://github.com/TarekMohammedgg)
+- GitHub: [@TarekMohammedgg](https://github.com/TarekMohammedgg/TarekMohammedgg)
 - LinkedIn: [@tarekmohammed](linkedin.com/in/tarekmohammed)
 
 ---
