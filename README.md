@@ -281,8 +281,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Tarek Mohammed**
 - GitHub: [@TarekMohammedgg](https://github.com/TarekMohammedgg/TarekMohammedgg)
-- LinkedIn: [@tarekmohammed](linkedin.com/in/tarekmohammed)
-
+- LinkedIn: [@tarekmohammed](https://www.linkedin.com/in/tarekmohammed/)
 ---
 
 ## 🙏 Acknowledgments
