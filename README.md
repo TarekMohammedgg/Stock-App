@@ -158,8 +158,8 @@
 3. **Configure environment**
    - Create a `.env` file in the root directory:
    ```env
-   # Add your environment variables here
-   ```
+      GSHEET_CREDENTIALS
+  ```
 
 4. **Firebase Setup**
    - Add `google-services.json` (Android) to `android/app/`
