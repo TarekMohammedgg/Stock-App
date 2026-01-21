@@ -3,6 +3,7 @@
 /// to support Unit, Widget, and Integration testing.
 ///
 /// Using mocktail for null-safe mocking (no build_runner needed)
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

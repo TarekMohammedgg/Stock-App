@@ -1,5 +1,6 @@
 /// Widget tests for EmployeeScreen
 /// Tests UI rendering, user interactions, and transaction flow
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

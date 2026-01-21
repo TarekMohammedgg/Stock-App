@@ -75,7 +75,7 @@ class _ManagerSignUpScreenState extends State<ManagerSignUpScreen> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('Manager Sign Up'.tr()),
         elevation: 0,
@@ -106,7 +106,7 @@ class _ManagerSignUpScreenState extends State<ManagerSignUpScreen> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: colorScheme.onBackground,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -116,7 +116,7 @@ class _ManagerSignUpScreenState extends State<ManagerSignUpScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: colorScheme.onBackground.withOpacity(0.7),
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -220,8 +220,9 @@ class _ManagerSignUpScreenState extends State<ManagerSignUpScreen> {
                     ),
                     validator: (v) {
                       if (v?.isEmpty ?? true) return 'Required'.tr();
-                      if (v != _passwordController.text)
+                      if (v != _passwordController.text) {
                         return 'Passwords do not match'.tr();
+                      }
                       return null;
                     },
                   ),

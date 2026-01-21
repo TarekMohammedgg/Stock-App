@@ -10,7 +10,7 @@ import 'package:gdrive_tutorial/core/shared_prefs.dart';
 
 class EmployeeAttendance extends StatefulWidget {
   static const String id = 'employee_attendance';
-  const EmployeeAttendance({Key? key}) : super(key: key);
+  const EmployeeAttendance({super.key});
 
   @override
   State<EmployeeAttendance> createState() => _EmployeeAttendanceState();
@@ -181,15 +181,15 @@ class _EmployeeAttendanceState extends State<EmployeeAttendance> {
 
     if (!isDataLoaded) {
       return Scaffold(
-        backgroundColor: colorScheme.background,
+        backgroundColor: colorScheme.surface,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           title: Text(
             'Attendance',
-            style: TextStyle(color: colorScheme.onBackground),
+            style: TextStyle(color: colorScheme.onSurface),
           ),
-          iconTheme: IconThemeData(color: colorScheme.onBackground),
+          iconTheme: IconThemeData(color: colorScheme.onSurface),
         ),
         body: Center(
           child: CircularProgressIndicator(color: colorScheme.primary),
@@ -198,18 +198,18 @@ class _EmployeeAttendanceState extends State<EmployeeAttendance> {
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'Employee Attendance'.tr(),
           style: TextStyle(
-            color: colorScheme.onBackground,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
-        iconTheme: IconThemeData(color: colorScheme.onBackground),
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh, color: colorScheme.primary),

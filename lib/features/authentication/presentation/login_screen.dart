@@ -100,6 +100,7 @@ class _LoginScreenState extends State<LoginScreen>
     _controller.repeat();
   }
 
+  @override
   dispose() {
     _controller.dispose();
     super.dispose();

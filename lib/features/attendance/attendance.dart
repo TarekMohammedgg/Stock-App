@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 class AttendancePage extends StatefulWidget {
+  const AttendancePage({super.key});
+
   @override
   _AttendancePageState createState() => _AttendancePageState();
 }
@@ -10,7 +12,7 @@ class _AttendancePageState extends State<AttendancePage> {
   // 1. إحداثيات مقر العمل (مثال: برج القاهرة)
   final double officeLat = 29.934596;
   final double officeLong = 31.264948;
-  
+
   // 2. المسافة المسموح بها بالمتر (نصف القطر)
   final double allowedRadiusInMeters = 50.0;
 
@@ -38,7 +40,9 @@ class _AttendancePageState extends State<AttendancePage> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      setState(() => message = "الصلاحية مرفوضة بشكل دائم، يرجى تغييرها من الإعدادات");
+      setState(
+        () => message = "الصلاحية مرفوضة بشكل دائم، يرجى تغييرها من الإعدادات",
+      );
       return;
     }
 
@@ -59,13 +63,15 @@ class _AttendancePageState extends State<AttendancePage> {
     if (distanceInMeters <= allowedRadiusInMeters) {
       // الموظف داخل النطاق
       setState(() {
-        message = "✅ تم تسجيل الحضور بنجاح! (المسافة: ${distanceInMeters.toStringAsFixed(1)} متر)";
+        message =
+            "✅ تم تسجيل الحضور بنجاح! (المسافة: ${distanceInMeters.toStringAsFixed(1)} متر)";
       });
       // هنا يمكنك استدعاء API لتسجيل الحضور في قاعدة البيانات
     } else {
       // الموظف خارج النطاق
       setState(() {
-        message = "❌ خطأ: أنت خارج نطاق العمل. (المسافة: ${distanceInMeters.toStringAsFixed(1)} متر)";
+        message =
+            "❌ خطأ: أنت خارج نطاق العمل. (المسافة: ${distanceInMeters.toStringAsFixed(1)} متر)";
       });
     }
   }
@@ -78,7 +84,11 @@ class _AttendancePageState extends State<AttendancePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(message, textAlign: TextAlign.center, style: TextStyle(fontSize: 18)),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18),
+            ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: checkAttendance,

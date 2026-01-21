@@ -151,7 +151,7 @@ class _ManagerLoginScreenState extends State<ManagerLoginScreen> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('Manager Login'.tr()),
         elevation: 0,
@@ -185,7 +185,7 @@ class _ManagerLoginScreenState extends State<ManagerLoginScreen> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: colorScheme.onBackground,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -195,7 +195,7 @@ class _ManagerLoginScreenState extends State<ManagerLoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: colorScheme.onBackground.withOpacity(0.7),
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: 48),
@@ -314,9 +314,7 @@ class _ManagerLoginScreenState extends State<ManagerLoginScreen> {
                                   .tr(),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: colorScheme.onBackground.withOpacity(
-                                  0.8,
-                                ),
+                                color: colorScheme.onSurface.withOpacity(0.8),
                               ),
                             ),
                           ),

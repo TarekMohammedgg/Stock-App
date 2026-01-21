@@ -11,7 +11,11 @@ class TransactionDialog extends StatefulWidget {
   final List<Map<String, dynamic>> products;
   final VoidCallback onSave;
 
-  const TransactionDialog({required this.products, required this.onSave});
+  const TransactionDialog({
+    super.key,
+    required this.products,
+    required this.onSave,
+  });
 
   @override
   State<TransactionDialog> createState() => _TransactionDialogState();

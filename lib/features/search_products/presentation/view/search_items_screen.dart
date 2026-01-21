@@ -299,11 +299,11 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('Search Items'.tr()),
         backgroundColor: Colors.transparent,
-        foregroundColor: colorScheme.onBackground,
+        foregroundColor: colorScheme.onSurface,
         actions: [
           IconButton(
             icon: Icon(Icons.qr_code_scanner, color: colorScheme.primary),
@@ -602,7 +602,7 @@ class _BarcodeScannerViewState extends State<_BarcodeScannerView> {
       appBar: AppBar(
         title: Text('Scan Barcode'.tr()),
         backgroundColor: Colors.transparent,
-        foregroundColor: colorScheme.onBackground,
+        foregroundColor: colorScheme.onSurface,
         actions: [
           IconButton(
             icon: Icon(Icons.flash_on, color: colorScheme.primary),

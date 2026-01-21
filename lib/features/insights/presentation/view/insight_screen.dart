@@ -142,7 +142,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('Stock Insights'.tr()),
         centerTitle: true,
@@ -391,7 +391,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: colorScheme.onBackground,
+                color: colorScheme.onSurface,
               ),
             ),
             TextButton.icon(
@@ -414,7 +414,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
         const SizedBox(height: 12),
         Text(
           '${DateFormat('MMM d, yyyy').format(startDate)} - ${DateFormat('MMM d, yyyy').format(endDate)}',
-          style: TextStyle(color: colorScheme.onBackground.withOpacity(0.6)),
+          style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
         ),
       ],
     );

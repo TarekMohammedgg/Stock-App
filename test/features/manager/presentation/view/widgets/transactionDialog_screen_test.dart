@@ -1,5 +1,6 @@
 /// Widget tests for TransactionDialog
 /// Tests sale recording with employee username tracking
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

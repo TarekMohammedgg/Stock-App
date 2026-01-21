@@ -8,6 +8,7 @@ class ProductCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   const ProductCard({
+    super.key,
     required this.product,
     required this.onEdit,
     required this.onDelete,
@@ -103,7 +104,10 @@ class ProductCard extends StatelessWidget {
                   children: [
                     Icon(Icons.edit, size: 20, color: colorScheme.primary),
                     const SizedBox(width: 8),
-                    Text('Edit', style: TextStyle(color: colorScheme.onSurface)),
+                    Text(
+                      'Edit',
+                      style: TextStyle(color: colorScheme.onSurface),
+                    ),
                   ],
                 ),
               ),

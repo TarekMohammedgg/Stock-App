@@ -14,7 +14,7 @@ import 'package:gdrive_tutorial/core/permission_helper.dart';
 import 'package:gdrive_tutorial/features/insights/presentation/view/insight_screen.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/manager_employee_dashboard.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/allProducts.dart';
-import 'package:gdrive_tutorial/features/employee/presentation/view/employee_screen.dart';
+import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/manager_transaction_screen.dart';
 
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/product_dialog.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/quick_action.dart';
@@ -297,8 +297,9 @@ class _ManagerScreenState extends State<ManagerScreen> {
     for (var product in loadedProducts) {
       final productId = product[kProductId]?.toString() ?? '';
       final name = product[kProductName]?.toString() ?? '';
-      if (name.isEmpty || productId.isEmpty)
+      if (name.isEmpty || productId.isEmpty) {
         continue; // Ignore empty/header rows
+      }
 
       final totalQty = productQuantities[productId] ?? 0;
       if (totalQty <= kLowStockThreshold) {
@@ -435,13 +436,10 @@ class _ManagerScreenState extends State<ManagerScreen> {
       final managerEmail = CacheHelper.getData(kEmail) ?? 'store@example.com';
       final managerName = CacheHelper.getData(kDisplayName) ?? 'Store Manager';
 
-      // Get current locale for localized invoice
-      final currentLocale = context.locale.languageCode;
-
-      // Create invoice with localized text
+      // Create invoice (always in English)
       final invoice = Invoice(
         info: InvoiceInfo(
-          description: '${'Sale Transaction'.tr()} #$saleId',
+          description: 'Sale Transaction #$saleId',
           number: saleId,
           date: saleDate,
           dueDate: saleDate.add(const Duration(days: 7)),
@@ -452,17 +450,14 @@ class _ManagerScreenState extends State<ManagerScreen> {
           paymentInfo: managerEmail,
         ),
         customer: Customer(
-          name: 'Walk-in Customer'.tr(),
-          address: '${'Served by'.tr()}: $employeeUsername',
+          name: 'Walk-in Customer',
+          address: 'Served by: $employeeUsername',
         ),
         items: invoiceItems,
       );
 
-      // Generate and open PDF with language support
-      final pdfFile = await PdfInvoiceApi.generate(
-        invoice,
-        languageCode: currentLocale,
-      );
+      // Generate and open PDF (always English)
+      final pdfFile = await PdfInvoiceApi.generate(invoice);
 
       if (mounted) Navigator.pop(context); // Dismiss loading
 
@@ -486,7 +481,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
     final managerEmail = CacheHelper.getData(kEmail);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         toolbarHeight: 70,
         backgroundColor: Colors.transparent,
@@ -523,7 +518,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
                     'Hi'.tr(namedArgs: {'name': helloUsername}),
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: colorScheme.onBackground,
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -544,7 +539,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
                       managerEmail ?? "manager@stock.com",
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: colorScheme.onBackground.withOpacity(0.6),
+                        color: colorScheme.onSurface.withOpacity(0.6),
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
@@ -661,7 +656,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: colorScheme.onBackground,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -720,7 +715,9 @@ class _ManagerScreenState extends State<ManagerScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const EmployeeScreen()),
+            MaterialPageRoute(
+              builder: (context) => const ManagerTransactionScreen(),
+            ),
           );
         },
         icon: Icon(Icons.shopping_cart, color: colorScheme.onPrimary),
@@ -749,7 +746,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: colorScheme.onBackground,
+              color: colorScheme.onSurface,
             ),
           ),
         ],
@@ -835,7 +832,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
             ),
             title: Text(
               isNewStructure
-                  ? 'Invoice'.tr() + '#$saleId'
+                  ? '${'Invoice'.tr()}#$saleId'
                   : (sale[kSaleProductName]?.toString() ?? 'Unknown'),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -1031,7 +1028,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
   Widget _buildPendingActivationView() {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('Account Status'.tr()),
         backgroundColor: Colors.transparent,
@@ -1068,7 +1065,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
                 'Activation Pending'.tr(),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.onBackground,
+                  color: colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1077,7 +1074,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
                 'Your account is currently inactive.\nPlease wait for the administrator to activate your account.'
                     .tr(),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onBackground.withOpacity(0.7),
+                  color: colorScheme.onSurface.withOpacity(0.7),
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,

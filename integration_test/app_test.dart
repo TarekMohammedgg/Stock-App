@@ -1,5 +1,6 @@
 /// Integration tests for complete application flows
 /// Tests end-to-end user journeys across multiple screens
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';

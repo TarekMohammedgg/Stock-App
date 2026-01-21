@@ -1,5 +1,6 @@
 /// Unit tests for FirestoreAuthService
 /// Tests authentication, session management, and employee operations
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

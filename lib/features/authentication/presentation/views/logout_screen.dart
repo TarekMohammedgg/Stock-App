@@ -49,16 +49,16 @@ class _LogoutScreenState extends State<LogoutScreen> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           'Profile'.tr(),
-          style: TextStyle(color: colorScheme.onBackground),
+          style: TextStyle(color: colorScheme.onSurface),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onBackground),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -104,7 +104,7 @@ class _LogoutScreenState extends State<LogoutScreen> {
                       Icon(
                         Icons.email_outlined,
                         size: 16,
-                        color: colorScheme.onBackground.withOpacity(0.6),
+                        color: colorScheme.onSurface.withOpacity(0.6),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -112,7 +112,7 @@ class _LogoutScreenState extends State<LogoutScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: colorScheme.onBackground.withOpacity(0.7),
+                          color: colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -157,7 +157,7 @@ class _LogoutScreenState extends State<LogoutScreen> {
                         ],
                       ),
                       CupertinoSwitch(
-                        activeColor: colorScheme.primary,
+                        activeTrackColor: colorScheme.primary,
                         value: Provider.of<ThemeProvider>(
                           context,
                           listen: true,

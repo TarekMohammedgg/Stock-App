@@ -348,19 +348,19 @@ class _ManagerEmployeeDashboardState extends State<ManagerEmployeeDashboard> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'Employees'.tr(),
           style: TextStyle(
-            color: colorScheme.onBackground,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onBackground),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -404,13 +404,13 @@ class _ManagerEmployeeDashboardState extends State<ManagerEmployeeDashboard> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: colorScheme.onBackground,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Add your first employee to get started',
-            style: TextStyle(color: colorScheme.onBackground.withOpacity(0.7)),
+            style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
           ),
         ],
       ),

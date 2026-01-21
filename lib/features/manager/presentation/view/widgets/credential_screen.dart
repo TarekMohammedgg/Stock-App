@@ -186,7 +186,7 @@ class _CredentialScreenState extends State<CredentialScreen> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('Service Setup'.tr()),
         centerTitle: true,
@@ -214,7 +214,7 @@ class _CredentialScreenState extends State<CredentialScreen> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.onBackground,
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 12),
@@ -223,7 +223,7 @@ class _CredentialScreenState extends State<CredentialScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: colorScheme.onBackground.withOpacity(0.7),
+                  color: colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 40),
@@ -432,14 +432,14 @@ class _CredentialScreenState extends State<CredentialScreen> {
         decimal: true,
         signed: true,
       ),
-      style: TextStyle(color: colorScheme.onBackground),
+      style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: colorScheme.primary.withOpacity(0.8)),
         hintText: hint,
-        hintStyle: TextStyle(color: colorScheme.onBackground.withOpacity(0.4)),
+        hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
         filled: true,
-        fillColor: colorScheme.background,
+        fillColor: colorScheme.surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
@@ -475,12 +475,12 @@ class _CredentialScreenState extends State<CredentialScreen> {
   }) {
     return TextFormField(
       controller: controller,
-      style: TextStyle(color: colorScheme.onBackground),
+      style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: colorScheme.primary.withOpacity(0.8)),
         hintText: hint,
-        hintStyle: TextStyle(color: colorScheme.onBackground.withOpacity(0.4)),
+        hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
         prefixIcon: Icon(icon, color: colorScheme.primary),
         filled: true,
         fillColor: colorScheme.surface,

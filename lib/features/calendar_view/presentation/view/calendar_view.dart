@@ -146,12 +146,12 @@ class _CalendarViewState extends State<CalendarView> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         elevation: 0,
         title: Text("Calendar View".tr()),
         backgroundColor: Colors.transparent,
-        foregroundColor: colorScheme.onBackground,
+        foregroundColor: colorScheme.onSurface,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -299,7 +299,7 @@ class _CalendarViewState extends State<CalendarView> {
                             "No sales for this date".tr(),
                             style: TextStyle(
                               fontSize: 16,
-                              color: colorScheme.onBackground.withOpacity(0.5),
+                              color: colorScheme.onSurface.withOpacity(0.5),
                               fontWeight: FontWeight.w500,
                             ),
                           ),

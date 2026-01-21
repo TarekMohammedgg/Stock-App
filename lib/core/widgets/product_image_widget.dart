@@ -78,7 +78,7 @@ class ProductImageWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Center(

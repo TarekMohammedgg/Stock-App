@@ -138,7 +138,7 @@ class _EmployeeLoginScreenState extends State<EmployeeLoginScreen> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('Employee Login'.tr()),
         elevation: 0,
@@ -172,7 +172,7 @@ class _EmployeeLoginScreenState extends State<EmployeeLoginScreen> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: colorScheme.onBackground,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -181,7 +181,7 @@ class _EmployeeLoginScreenState extends State<EmployeeLoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: colorScheme.onBackground.withOpacity(0.7),
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: 48),
@@ -300,9 +300,7 @@ class _EmployeeLoginScreenState extends State<EmployeeLoginScreen> {
                                   .tr(),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: colorScheme.onBackground.withOpacity(
-                                  0.8,
-                                ),
+                                color: colorScheme.onSurface.withOpacity(0.8),
                               ),
                             ),
                           ),

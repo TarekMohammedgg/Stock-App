@@ -131,7 +131,7 @@ class _InitializationScreenState extends State<InitializationScreen>
                 Text(
                   _errorMessage,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: colorScheme.onBackground),
+                  style: TextStyle(color: colorScheme.onSurface),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -156,7 +156,7 @@ class _InitializationScreenState extends State<InitializationScreen>
                         child: LinearProgressIndicator(
                           value: _progress,
                           minHeight: 8,
-                          backgroundColor: colorScheme.surfaceVariant,
+                          backgroundColor: colorScheme.surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation<Color>(
                             colorScheme.primary,
                           ),
@@ -168,7 +168,7 @@ class _InitializationScreenState extends State<InitializationScreen>
                       Text(
                         _statusMessage,
                         style: TextStyle(
-                          color: colorScheme.onBackground.withOpacity(0.7),
+                          color: colorScheme.onSurface.withOpacity(0.7),
                           fontSize: 14,
                         ),
                       ),

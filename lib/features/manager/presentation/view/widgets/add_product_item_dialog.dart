@@ -226,8 +226,9 @@ class _AddProductItemDialogState extends State<AddProductItemDialog> {
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Required';
                       final cleanValue = v.replaceAll(',', '');
-                      if (double.tryParse(cleanValue) == null)
+                      if (double.tryParse(cleanValue) == null) {
                         return 'Invalid number';
+                      }
                       return null;
                     },
                   ),
@@ -250,10 +251,12 @@ class _AddProductItemDialogState extends State<AddProductItemDialog> {
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Required';
                       final cleanValue = v.replaceAll(',', '');
-                      if (int.tryParse(cleanValue) == null)
+                      if (int.tryParse(cleanValue) == null) {
                         return 'Invalid number';
-                      if (int.parse(cleanValue) <= 0)
+                      }
+                      if (int.parse(cleanValue) <= 0) {
                         return 'Must be greater than 0';
+                      }
                       return null;
                     },
                   ),

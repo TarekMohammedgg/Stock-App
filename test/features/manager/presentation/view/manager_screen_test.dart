@@ -1,5 +1,6 @@
 /// Widget tests for ManagerScreen
 /// Tests dashboard rendering, product management, and navigation
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

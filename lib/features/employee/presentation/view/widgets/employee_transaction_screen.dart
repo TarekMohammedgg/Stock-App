@@ -19,15 +19,18 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:synchronized/synchronized.dart';
 
-class EmployeeScreen extends StatefulWidget {
-  static const String id = 'employee_screen';
-  const EmployeeScreen({super.key});
+/// Employee Transaction Screen Widget - Used in the widgets folder
+/// This is the same as EmployeeScreen but placed in the widgets folder for organization
+class EmployeeTransactionScreen extends StatefulWidget {
+  static const String id = 'employee_transaction_screen';
+  const EmployeeTransactionScreen({super.key});
 
   @override
-  State<EmployeeScreen> createState() => _EmployeeScreenState();
+  State<EmployeeTransactionScreen> createState() =>
+      _EmployeeTransactionScreenState();
 }
 
-class _EmployeeScreenState extends State<EmployeeScreen> {
+class _EmployeeTransactionScreenState extends State<EmployeeTransactionScreen> {
   final GSheetService gSheetService = GSheetService();
 
   // Locks for synchronized operations

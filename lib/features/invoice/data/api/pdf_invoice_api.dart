@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:gdrive_tutorial/core/utils.dart';
 import 'package:gdrive_tutorial/features/invoice/data/api/pdf_api.dart';
 import 'package:gdrive_tutorial/features/invoice/data/model/customer.dart';
@@ -77,50 +76,14 @@ class InvoiceLabels {
 }
 
 class PdfInvoiceApi {
-  static pw.Font? _arabicFont;
-
-  /// Load Arabic-supporting font
-  static Future<pw.Font> _loadArabicFont() async {
-    if (_arabicFont != null) return _arabicFont!;
-
-    // Try to load Noto Naskh Arabic font from assets
-    try {
-      final fontData = await rootBundle.load(
-        'assets/fonts/NotoNaskhArabic-Regular.ttf',
-      );
-      _arabicFont = pw.Font.ttf(fontData);
-      return _arabicFont!;
-    } catch (e) {
-      // Fallback to default font
-      return pw.Font.helvetica();
-    }
-  }
-
-  static Future<File> generate(
-    Invoice invoice, {
-    String languageCode = 'en',
-  }) async {
+  static Future<File> generate(Invoice invoice) async {
     final pdf = Document();
 
-    // Determine labels based on language
-    final labels = languageCode == 'ar'
-        ? InvoiceLabels.arabic()
-        : InvoiceLabels.english();
-
-    // Load Arabic font if needed
-    pw.Font? font;
-    if (labels.isRtl) {
-      font = await _loadArabicFont();
-    }
+    // Always use English labels for PDF
+    final labels = InvoiceLabels.english();
 
     pdf.addPage(
       MultiPage(
-        textDirection: labels.isRtl
-            ? pw.TextDirection.rtl
-            : pw.TextDirection.ltr,
-        theme: labels.isRtl && font != null
-            ? ThemeData.withFont(base: font, bold: font)
-            : null,
         build: (context) => [
           buildHeader(invoice, labels),
           SizedBox(height: 3 * PdfPageFormat.cm),

@@ -4,7 +4,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:gdrive_tutorial/core/consts.dart';
 import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:table_calendar/table_calendar.dart';
 
 Future<String> getDeviceNameID() async {
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();

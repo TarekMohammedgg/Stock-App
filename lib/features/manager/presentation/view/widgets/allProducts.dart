@@ -47,17 +47,17 @@ class _AllProductsState extends State<AllProducts> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           "All Products".tr(),
           style: TextStyle(
-            color: colorScheme.onBackground,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onBackground),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.transparent,
@@ -266,7 +266,7 @@ class _AllProductsState extends State<AllProducts> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: colorScheme.onBackground,
+              color: colorScheme.onSurface,
             ),
           ),
         ],

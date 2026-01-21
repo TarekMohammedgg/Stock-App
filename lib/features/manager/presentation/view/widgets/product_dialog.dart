@@ -15,7 +15,7 @@ class ProductDialog extends StatefulWidget {
   final Map<String, dynamic>? product;
   final VoidCallback onSave;
 
-  const ProductDialog({this.product, required this.onSave});
+  const ProductDialog({super.key, this.product, required this.onSave});
 
   @override
   State<ProductDialog> createState() => _ProductDialogState();

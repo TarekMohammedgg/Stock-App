@@ -4,10 +4,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'package:gdrive_tutorial/core/consts.dart';
-import 'package:gdrive_tutorial/core/permission_helper.dart';
+
 import 'package:gdrive_tutorial/core/theme/toggle_theme.dart';
 import 'package:gdrive_tutorial/features/authentication/presentation/views/login_selection_screen.dart';
-import 'package:gdrive_tutorial/features/employee/presentation/view/widgets/employee_attendance.dart';
 import 'package:gdrive_tutorial/services/firestore_auth_service.dart';
 import 'package:gdrive_tutorial/services/gsheet_service.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/manager_screen.dart';
@@ -19,15 +18,18 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:synchronized/synchronized.dart';
 
-class EmployeeScreen extends StatefulWidget {
-  static const String id = 'employee_screen';
-  const EmployeeScreen({super.key});
+/// Manager Transaction Screen - Similar to Employee Screen but without attendance check-in icon
+/// Managers don't need to check in before making transactions
+class ManagerTransactionScreen extends StatefulWidget {
+  static const String id = 'manager_transaction_screen';
+  const ManagerTransactionScreen({super.key});
 
   @override
-  State<EmployeeScreen> createState() => _EmployeeScreenState();
+  State<ManagerTransactionScreen> createState() =>
+      _ManagerTransactionScreenState();
 }
 
-class _EmployeeScreenState extends State<EmployeeScreen> {
+class _ManagerTransactionScreenState extends State<ManagerTransactionScreen> {
   final GSheetService gSheetService = GSheetService();
 
   // Locks for synchronized operations
@@ -38,19 +40,10 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
 
   bool isLoading = false;
   bool isScanning = false;
-  bool _isEmployeeActive = true;
-  final _authService = FirestoreAuthService();
 
   @override
   void initState() {
     super.initState();
-    _checkActivationStatus();
-  }
-
-  void _checkActivationStatus() {
-    setState(() {
-      _isEmployeeActive = CacheHelper.getData(kPrefEmployeeIsActive) ?? true;
-    });
   }
 
   /// Product loaded from scan or search
@@ -114,52 +107,10 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
   }
 
   Future<void> _addTransaction() async {
-    // 1. Check User Type and Attendance
-    final authService = FirestoreAuthService();
-    final String? employeeId = CacheHelper.getData(kEmployeeId);
-    final String? userType = CacheHelper.getData(kUserType);
-
-    if (employeeId == null && userType != kUserTypeManager) {
-      _showErrorSnackBar('Session expired. Please login again.'.tr());
-      return;
-    }
-
+    // Manager doesn't need attendance check - direct transaction processing
     setState(() => isLoading = true);
 
-    // Managers skip attendance check
-    bool shouldCheckAttendance = userType != kUserTypeManager;
-    bool isCheckedIn = true;
-
-    if (shouldCheckAttendance && employeeId != null) {
-      isCheckedIn = await authService.isEmployeeCheckedIn(employeeId);
-    }
-
-    if (!isCheckedIn) {
-      setState(() => isLoading = false);
-      _showErrorSnackBar('You must check in before making transactions'.tr());
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const EmployeeAttendance()),
-        );
-      }
-      return;
-    }
-
-    // 2. Check permission
-    // For managers, we assume full permission or at least skip the standard check if desired,
-    // but the user said "permission is full", so we can either skip or let it pass.
-    if (userType != kUserTypeManager) {
-      final hasPermission = await PermissionHelper.canManageInventory();
-      if (!hasPermission) {
-        setState(() => isLoading = false);
-        _showErrorSnackBar(
-          'You do not have permission to manage inventory'.tr(),
-        );
-        return;
-      }
-    }
-
+    // Manager has full permission - skip permission check
     if (selectedProduct == null || selectedProduct!.isEmpty) {
       setState(() => isLoading = false);
       _showErrorSnackBar('No products selected'.tr());
@@ -190,14 +141,10 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
         final saleId = await gSheetService.getNextInvoiceNumber();
         final totalPrice = _calculateTotalPrice();
 
-        // Build employee username string
-        final String? cachedUserType = CacheHelper.getData(kUserType);
+        // Build manager username string
         final String? cachedUsername = CacheHelper.getData(kUsername);
-        final String userLabel = cachedUserType == kUserTypeManager
-            ? 'Manager'
-            : 'Employee';
         final String employeeUsername =
-            '$userLabel ${cachedUsername ?? 'Unknown'}';
+            'Manager ${cachedUsername ?? 'Unknown'}';
 
         // Step 1: Create Sale record (invoice header)
         final saleData = {
@@ -277,12 +224,8 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
           await _productListLock.synchronized(() async {
             if (mounted) {
               setState(() => selectedProduct = null);
-
-              // If manager, go back to dashboard
-              final String? userType = CacheHelper.getData(kUserType);
-              if (userType == kUserTypeManager) {
-                Navigator.of(context).pushReplacementNamed(ManagerScreen.id);
-              }
+              // Navigate back to manager dashboard
+              Navigator.of(context).pushReplacementNamed(ManagerScreen.id);
             }
           });
         } else {
@@ -359,6 +302,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
       backgroundColor: Colors.transparent,
       foregroundColor: colorScheme.onSurface,
       actions: [
+        // Theme toggle button
         IconButton(
           onPressed: () {
             Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
@@ -370,15 +314,8 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
             color: colorScheme.primary,
           ),
         ),
-        IconButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => EmployeeAttendance()),
-            );
-          },
-          icon: Icon(Icons.person, color: colorScheme.primary),
-        ),
+        // Note: No person/attendance icon for manager - managers don't need to check in
+        // Logout button
         IconButton(
           icon: Icon(Icons.logout, color: colorScheme.primary),
           tooltip: 'Logout',
@@ -615,121 +552,8 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
     );
   }
 
-  Widget _buildPendingActivationView() {
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text('Account Pending'.tr()),
-        backgroundColor: Colors.transparent,
-        foregroundColor: colorScheme.onSurface,
-        actions: [
-          IconButton(
-            onPressed: () {
-              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-            },
-            icon: Icon(
-              Provider.of<ThemeProvider>(context, listen: true).isDark
-                  ? Icons.mode_night_outlined
-                  : Icons.sunny,
-              color: colorScheme.primary,
-            ),
-          ),
-          IconButton(
-            icon: Icon(Icons.logout, color: colorScheme.primary),
-            tooltip: 'Logout',
-            onPressed: () async {
-              final shouldLogout = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('Logout'.tr()),
-                  content: Text('Are you sure you want to logout?'.tr()),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text('Cancel'.tr()),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.error,
-                        foregroundColor: colorScheme.onError,
-                      ),
-                      child: Text('Logout'.tr()),
-                    ),
-                  ],
-                ),
-              );
-
-              if (shouldLogout == true && mounted) {
-                await _authService.logout();
-                if (mounted) {
-                  Navigator.of(
-                    context,
-                  ).pushReplacementNamed(LoginSelectionScreen.id);
-                }
-              }
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.hourglass_empty,
-                size: 80,
-                color: colorScheme.primary.withOpacity(0.6),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Account Pending Activation'.tr(),
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Your account is awaiting approval from your manager. Please contact your manager to activate your account.'
-                    .tr(),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () {
-                  _checkActivationStatus();
-                },
-                icon: const Icon(Icons.refresh),
-                label: Text('Refresh Status'.tr()),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!_isEmployeeActive) {
-      return _buildPendingActivationView();
-    }
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,

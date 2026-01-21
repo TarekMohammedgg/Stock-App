@@ -64,16 +64,16 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           "Stocky AI".tr(),
-          style: TextStyle(color: colorScheme.onBackground),
+          style: TextStyle(color: colorScheme.onSurface),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: colorScheme.onBackground,
+        foregroundColor: colorScheme.onSurface,
       ),
       body: _buildUI(),
     );

@@ -1,4 +1,5 @@
 /// Google API endpoints and constants
+library;
 
 class GoogleApiConstants {
   GoogleApiConstants._();

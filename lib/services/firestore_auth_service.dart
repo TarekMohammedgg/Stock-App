@@ -561,7 +561,7 @@ class FirestoreAuthService {
           .where(kEmployeeUsername, isEqualTo: username)
           .limit(1)
           .get();
-      log("$collection");
+      log(collection);
 
       if (querySnapshot.docs.isEmpty) {
         log('❌ User not found: $username');
