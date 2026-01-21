@@ -22,6 +22,8 @@ class AllProducts extends StatefulWidget {
 class _AllProductsState extends State<AllProducts> {
   bool isLoading = false;
   List<Map<String, dynamic>> products = [];
+  List<Map<String, dynamic>> productItems = []; // Product batches
+  Map<String, int> productQuantities = {}; // Aggregated quantities per product
   final GSheetService gSheetService = GSheetService();
   Timer? _refreshTimer;
 
@@ -116,18 +118,29 @@ class _AllProductsState extends State<AllProducts> {
       log('📡 Initializing GSheet service...');
       await gSheetService.initialize();
 
-      log('📥 Fetching products from Google Sheets...');
+      log('📥 Fetching products and product items from Google Sheets...');
       final loadedProducts = await gSheetService.getProducts();
+      final loadedProductItems = await gSheetService.getProductItems();
 
-      log('✅ Received ${loadedProducts.length} products from service');
+      log(
+        '✅ Received ${loadedProducts.length} products and ${loadedProductItems.length} product items',
+      );
 
-      // Log each product for debugging
-      for (int i = 0; i < loadedProducts.length; i++) {
-        log('Product $i: ${loadedProducts[i]}');
+      // Calculate aggregated quantities per product from ProductItems
+      final Map<String, int> quantities = {};
+      for (var item in loadedProductItems) {
+        final productId = item[kProductItemProductId]?.toString() ?? '';
+        if (productId.isEmpty) continue;
+
+        final qty =
+            int.tryParse(item[kProductItemQuantity]?.toString() ?? '0') ?? 0;
+        quantities[productId] = (quantities[productId] ?? 0) + qty;
       }
 
       setState(() {
         products = loadedProducts;
+        productItems = loadedProductItems;
+        productQuantities = quantities;
         isLoading = false;
       });
 
@@ -144,9 +157,23 @@ class _AllProductsState extends State<AllProducts> {
     try {
       log('🔄 Auto-refreshing products...');
       final loadedProducts = await gSheetService.getProducts();
+      final loadedProductItems = await gSheetService.getProductItems();
+
+      // Calculate aggregated quantities per product from ProductItems
+      final Map<String, int> quantities = {};
+      for (var item in loadedProductItems) {
+        final productId = item[kProductItemProductId]?.toString() ?? '';
+        if (productId.isEmpty) continue;
+
+        final qty =
+            int.tryParse(item[kProductItemQuantity]?.toString() ?? '0') ?? 0;
+        quantities[productId] = (quantities[productId] ?? 0) + qty;
+      }
 
       setState(() {
         products = loadedProducts;
+        productItems = loadedProductItems;
+        productQuantities = quantities;
       });
 
       log('✅ Auto-refresh complete. Total: ${products.length}');
@@ -177,7 +204,9 @@ class _AllProductsState extends State<AllProducts> {
       if (name.isEmpty) return false; // Ignore empty rows
 
       if (filterLowStock) {
-        final qty = int.tryParse(p[kProductQuantity]?.toString() ?? '0') ?? 0;
+        // Use aggregated quantity from ProductItems
+        final productId = p[kProductId]?.toString() ?? '';
+        final qty = productQuantities[productId] ?? 0;
         return qty <= kLowStockThreshold;
       }
       return true;
@@ -201,9 +230,16 @@ class _AllProductsState extends State<AllProducts> {
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
           final product = displayProducts[index];
+          final productId = product[kProductId]?.toString() ?? '';
+
+          // Create a modified product map with aggregated quantity
+          final productWithQuantity = {
+            ...product,
+            kProductQuantity: productQuantities[productId] ?? 0,
+          };
 
           return ProductCard(
-            product: product,
+            product: productWithQuantity,
             onEdit: () => _showEditProductDialog(product),
             onDelete: () =>
                 _deleteProduct(product[kProductId]?.toString() ?? ''),

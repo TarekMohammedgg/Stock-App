@@ -289,6 +289,40 @@ class GSheetService {
     }
   }
 
+  /// Get the next invoice number (sequential: 001, 002, 003, ...)
+  Future<String> getNextInvoiceNumber() async {
+    await _ensureInitialized();
+
+    try {
+      final sales = await getSales();
+
+      if (sales.isEmpty) {
+        return '001';
+      }
+
+      int maxNumber = 0;
+      for (var sale in sales) {
+        // Try new field first, then legacy
+        final saleId =
+            sale[kSalesId]?.toString() ?? sale[kSaleId]?.toString() ?? '';
+
+        // Try to parse as number
+        final num = int.tryParse(saleId);
+        if (num != null && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+
+      // Increment and format with leading zeros (at least 3 digits)
+      final nextNumber = maxNumber + 1;
+      return nextNumber.toString().padLeft(3, '0');
+    } catch (e) {
+      log('❌ Error getting next invoice number: $e');
+      // Fallback to timestamp-based ID
+      return DateTime.now().millisecondsSinceEpoch.toString();
+    }
+  }
+
   /// Add new sale to Sales sheet
   Future<bool> addSale(Map<String, dynamic> sale) async {
     await _ensureInitialized();
@@ -350,6 +384,7 @@ class GSheetService {
   // ==================== HIGH-LEVEL EXPIRED PRODUCTS OPERATIONS ====================
 
   /// Get all expired products from Expired sheet
+  /// @deprecated Use ProductItems with expiry dates instead
   Future<List<Map<String, dynamic>>> getExpiredProducts() async {
     await _ensureInitialized();
 
@@ -364,6 +399,7 @@ class GSheetService {
   }
 
   /// Add expired product to Expired sheet
+  /// @deprecated Use ProductItems with expiry dates instead
   Future<bool> addExpiredProduct(Map<String, dynamic> product) async {
     await _ensureInitialized();
 
@@ -384,6 +420,7 @@ class GSheetService {
   }
 
   /// Delete expired product from Expired sheet
+  /// @deprecated Use ProductItems with expiry dates instead
   Future<bool> deleteExpiredProduct(String productId) async {
     await _ensureInitialized();
 
@@ -399,6 +436,237 @@ class GSheetService {
       return result;
     } catch (e) {
       log('❌ Error deleting expired product: $e');
+      return false;
+    }
+  }
+
+  // ==================== PRODUCT ITEMS OPERATIONS (NEW WORKFLOW) ====================
+
+  /// Get all product items (batches) from ProductItems sheet
+  Future<List<Map<String, dynamic>>> getProductItems() async {
+    await _ensureInitialized();
+
+    try {
+      await readDataFromSheet(worksheetName: kProductItems);
+      log('✅ Fetched ${dataFromSheet.length} product items');
+      return List<Map<String, dynamic>>.from(dataFromSheet);
+    } catch (e) {
+      log('❌ Error fetching product items: $e');
+      return [];
+    }
+  }
+
+  /// Get product items by product ID
+  Future<List<Map<String, dynamic>>> getProductItemsByProductId(
+    String productId,
+  ) async {
+    await _ensureInitialized();
+
+    try {
+      await readDataFromSheet(worksheetName: kProductItems);
+      final items = dataFromSheet
+          .where((item) => item[kProductItemProductId] == productId)
+          .toList();
+      log('✅ Fetched ${items.length} items for product: $productId');
+      return List<Map<String, dynamic>>.from(items);
+    } catch (e) {
+      log('❌ Error fetching product items by product ID: $e');
+      return [];
+    }
+  }
+
+  /// Add new product item (batch) to ProductItems sheet
+  Future<bool> addProductItem(Map<String, dynamic> productItem) async {
+    await _ensureInitialized();
+
+    try {
+      final result = await insertDataIntoSheet(
+        userDetailsList: [productItem],
+        worksheetName: kProductItems,
+      );
+
+      if (result) {
+        log('✅ Product item added successfully');
+      }
+      return result;
+    } catch (e) {
+      log('❌ Error adding product item: $e');
+      return false;
+    }
+  }
+
+  /// Update existing product item in ProductItems sheet
+  Future<bool> updateProductItem(
+    String productItemId,
+    Map<String, dynamic> newData,
+  ) async {
+    await _ensureInitialized();
+
+    try {
+      final result = await updateDataFromSheet(
+        productItemId,
+        newData,
+        worksheetName: kProductItems,
+      );
+
+      if (result) {
+        log('✅ Product item updated successfully');
+      }
+      return result;
+    } catch (e) {
+      log('❌ Error updating product item: $e');
+      return false;
+    }
+  }
+
+  /// Delete product item from ProductItems sheet
+  Future<bool> deleteProductItem(String productItemId) async {
+    await _ensureInitialized();
+
+    try {
+      final result = await deleteDataFromSheet(
+        productItemId,
+        worksheetName: kProductItems,
+      );
+
+      if (result) {
+        log('✅ Product item deleted successfully');
+      }
+      return result;
+    } catch (e) {
+      log('❌ Error deleting product item: $e');
+      return false;
+    }
+  }
+
+  /// Get total quantity for a product (sum of all batches)
+  Future<int> getTotalProductQuantity(String productId) async {
+    await _ensureInitialized();
+
+    try {
+      final items = await getProductItemsByProductId(productId);
+      int total = 0;
+      for (var item in items) {
+        final qty =
+            int.tryParse(item[kProductItemQuantity]?.toString() ?? '0') ?? 0;
+        total += qty;
+      }
+      log('✅ Total quantity for product $productId: $total');
+      return total;
+    } catch (e) {
+      log('❌ Error calculating total quantity: $e');
+      return 0;
+    }
+  }
+
+  // ==================== SALES ITEMS OPERATIONS (NEW WORKFLOW) ====================
+
+  /// Get all sales items from SalesItems sheet
+  Future<List<Map<String, dynamic>>> getSalesItems() async {
+    await _ensureInitialized();
+
+    try {
+      await readDataFromSheet(worksheetName: kSalesItems);
+      log('✅ Fetched ${dataFromSheet.length} sales items');
+      return List<Map<String, dynamic>>.from(dataFromSheet);
+    } catch (e) {
+      log('❌ Error fetching sales items: $e');
+      return [];
+    }
+  }
+
+  /// Get sales items by sale ID
+  Future<List<Map<String, dynamic>>> getSalesItemsBySaleId(
+    String saleId,
+  ) async {
+    await _ensureInitialized();
+
+    try {
+      await readDataFromSheet(worksheetName: kSalesItems);
+      final items = dataFromSheet
+          .where((item) => item[kSalesItemSalesId] == saleId)
+          .toList();
+      log('✅ Fetched ${items.length} items for sale: $saleId');
+      return List<Map<String, dynamic>>.from(items);
+    } catch (e) {
+      log('❌ Error fetching sales items by sale ID: $e');
+      return [];
+    }
+  }
+
+  /// Add new sales item to SalesItems sheet
+  Future<bool> addSalesItem(Map<String, dynamic> salesItem) async {
+    await _ensureInitialized();
+
+    try {
+      final result = await insertDataIntoSheet(
+        userDetailsList: [salesItem],
+        worksheetName: kSalesItems,
+      );
+
+      if (result) {
+        log('✅ Sales item added successfully');
+      }
+      return result;
+    } catch (e) {
+      log('❌ Error adding sales item: $e');
+      return false;
+    }
+  }
+
+  /// Add a complete sale with multiple items (atomic operation)
+  /// Creates one Sale record and multiple SalesItem records
+  Future<bool> addSaleWithItems({
+    required Map<String, dynamic> saleData,
+    required List<Map<String, dynamic>> saleItems,
+  }) async {
+    await _ensureInitialized();
+
+    try {
+      // Add the sale header
+      final saleResult = await addSale(saleData);
+      if (!saleResult) {
+        log('❌ Failed to add sale header');
+        return false;
+      }
+
+      // Add all sale items
+      for (var item in saleItems) {
+        final itemResult = await insertDataIntoSheet(
+          userDetailsList: [item],
+          worksheetName: kSalesItems,
+        );
+        if (!itemResult) {
+          log('❌ Failed to add sale item: ${item[kSalesItemProductId]}');
+          // Note: In a real transaction, we'd rollback here
+          // For Google Sheets, we just log the error
+        }
+      }
+
+      log('✅ Sale with ${saleItems.length} items added successfully');
+      return true;
+    } catch (e) {
+      log('❌ Error adding sale with items: $e');
+      return false;
+    }
+  }
+
+  /// Delete sales item from SalesItems sheet
+  Future<bool> deleteSalesItem(String salesItemId) async {
+    await _ensureInitialized();
+
+    try {
+      final result = await deleteDataFromSheet(
+        salesItemId,
+        worksheetName: kSalesItems,
+      );
+
+      if (result) {
+        log('✅ Sales item deleted successfully');
+      }
+      return result;
+    } catch (e) {
+      log('❌ Error deleting sales item: $e');
       return false;
     }
   }

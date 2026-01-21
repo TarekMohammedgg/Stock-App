@@ -1,12 +1,12 @@
 import 'dart:developer';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:gdrive_tutorial/core/consts.dart';
 import 'package:gdrive_tutorial/core/permission_helper.dart';
+import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/product_dialog.dart';
 import 'package:gdrive_tutorial/services/gsheet_service.dart';
-import 'package:gdrive_tutorial/core/widgets/product_image_widget.dart';
-import 'package:uuid/uuid.dart';
 
 class SearchItemsScreen extends StatefulWidget {
   static const String id = 'search_items_screen';
@@ -20,8 +20,9 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
   final GSheetService gSheetService = GSheetService();
   final TextEditingController searchController = TextEditingController();
 
-  List<Map<String, dynamic>> allProducts = [];
-  List<Map<String, dynamic>> filteredProducts = [];
+  List<Map<String, dynamic>> allProducts = []; // Products basic info
+  List<Map<String, dynamic>> allProductItems = []; // Product items (batches)
+  List<Map<String, dynamic>> displayItems = []; // Combined for display
   bool isLoading = true;
   String? errorMessage;
 
@@ -48,7 +49,7 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
   /// any async operation (await, Future.then, Timer, Animation callbacks).
 
   Future<void> _loadProducts() async {
-    if (!mounted) return; // Guard: Exit if widget was disposed
+    if (!mounted) return;
 
     setState(() {
       isLoading = true;
@@ -56,23 +57,45 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
     });
 
     try {
-      // Initialize and get products from Google Sheets
       await gSheetService.initialize();
-      final products = await gSheetService.getProducts();
-      log("products: $products");
 
-      // Guard: Check mounted again after async operation
+      // Load both Products and ProductItems
+      final products = await gSheetService.getProducts();
+      final productItems = await gSheetService.getProductItems();
+
+      log("products: $products");
+      log("productItems: $productItems");
+
       if (!mounted) return;
 
+      // Create display items by joining ProductItems with Product info
+      final List<Map<String, dynamic>> combined = [];
+      for (var item in productItems) {
+        final productId = item[kProductItemProductId]?.toString();
+        final product = products.firstWhere(
+          (p) => p[kProductId]?.toString() == productId,
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (product.isNotEmpty) {
+          combined.add({
+            ...item,
+            kProductName: product[kProductName],
+            kProductPrice: product[kProductPrice],
+            kProductBarcode: product[kProductBarcode],
+          });
+        }
+      }
+
       setState(() {
-        allProducts = products ?? [];
-        filteredProducts = allProducts;
+        allProducts = products;
+        allProductItems = productItems;
+        displayItems = combined;
         isLoading = false;
       });
     } catch (e) {
       log('Error loading products: $e');
 
-      // Guard: Check mounted before setState in error handler
       if (!mounted) return;
 
       setState(() {
@@ -83,25 +106,41 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
   }
 
   Future<void> _fetchData() async {
-    // Guard: Exit early if widget is no longer mounted
     if (!mounted) return;
 
     try {
-      // Fetch latest products data
       final products = await gSheetService.getProducts();
-      log("products: $products");
+      final productItems = await gSheetService.getProductItems();
 
-      // Guard: Check mounted after async operation
       if (!mounted) return;
 
+      // Create display items by joining ProductItems with Product info
+      final List<Map<String, dynamic>> combined = [];
+      for (var item in productItems) {
+        final productId = item[kProductItemProductId]?.toString();
+        final product = products.firstWhere(
+          (p) => p[kProductId]?.toString() == productId,
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (product.isNotEmpty) {
+          combined.add({
+            ...item,
+            kProductName: product[kProductName],
+            kProductPrice: product[kProductPrice],
+            kProductBarcode: product[kProductBarcode],
+          });
+        }
+      }
+
       setState(() {
-        allProducts = products ?? [];
-        filteredProducts = allProducts;
+        allProducts = products;
+        allProductItems = productItems;
+        displayItems = combined;
       });
     } catch (e) {
       log('Error loading products: $e');
 
-      // Guard: Check mounted before setState
       if (!mounted) return;
 
       setState(() {
@@ -113,30 +152,104 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
   void _filterProducts(String query) {
     setState(() {
       if (query.isEmpty) {
-        filteredProducts = allProducts;
+        // Show all items when no search
+        final List<Map<String, dynamic>> combined = [];
+        for (var item in allProductItems) {
+          final productId = item[kProductItemProductId]?.toString();
+          final product = allProducts.firstWhere(
+            (p) => p[kProductId]?.toString() == productId,
+            orElse: () => <String, dynamic>{},
+          );
+
+          if (product.isNotEmpty) {
+            combined.add({
+              ...item,
+              kProductName: product[kProductName],
+              kProductPrice: product[kProductPrice],
+              kProductBarcode: product[kProductBarcode],
+            });
+          }
+        }
+        displayItems = combined;
       } else {
-        filteredProducts = allProducts.where((product) {
+        // Filter by product name OR barcode
+        final searchLower = query.toLowerCase();
+
+        // First rebuild all combined items then filter
+        final List<Map<String, dynamic>> combined = [];
+        for (var item in allProductItems) {
+          final productId = item[kProductItemProductId]?.toString();
+          final product = allProducts.firstWhere(
+            (p) => p[kProductId]?.toString() == productId,
+            orElse: () => <String, dynamic>{},
+          );
+
+          if (product.isNotEmpty) {
+            combined.add({
+              ...item,
+              kProductName: product[kProductName],
+              kProductPrice: product[kProductPrice],
+              kProductBarcode: product[kProductBarcode],
+            });
+          }
+        }
+
+        displayItems = combined.where((item) {
           final productName =
-              product[kProductName]?.toString().toLowerCase() ?? '';
-
-          final searchLower = query.toLowerCase();
-
-          return productName.contains(searchLower);
+              item[kProductName]?.toString().toLowerCase() ?? '';
+          final productBarcode =
+              item[kProductBarcode]?.toString().toLowerCase() ?? '';
+          return productName.contains(searchLower) ||
+              productBarcode.contains(searchLower);
         }).toList();
       }
     });
   }
 
-  void _selectProduct(Map<String, dynamic> product) {
-    // Return the selected product data with proper type conversion
+  /// Scan barcode and search for matching product
+  Future<void> _scanBarcode() async {
+    final scannedBarcode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const _BarcodeScannerView()),
+    );
+
+    if (scannedBarcode != null && scannedBarcode.isNotEmpty && mounted) {
+      // Search for product with matching barcode
+      final matchingProduct = displayItems.firstWhere(
+        (item) =>
+            item[kProductBarcode]?.toString().toLowerCase() ==
+            scannedBarcode.toLowerCase(),
+        orElse: () => <String, dynamic>{},
+      );
+
+      if (matchingProduct.isNotEmpty) {
+        // Check if product is in stock
+        final stock = _parseInt(matchingProduct[kProductItemQuantity]) ?? 0;
+        if (stock > 0) {
+          _selectProduct(matchingProduct);
+        } else {
+          _showErrorSnackBar('Product is out of stock'.tr());
+        }
+      } else {
+        // Show message and set search text to scanned barcode
+        searchController.text = scannedBarcode;
+        _filterProducts(scannedBarcode);
+        _showErrorSnackBar('No product found with this barcode'.tr());
+      }
+    }
+  }
+
+  void _selectProduct(Map<String, dynamic> productItem) {
+    // Return the selected product item data with proper type conversion
     final result = {
-      kProductId: product[kProductId]?.toString() ?? '',
-      kProductBarcode: product[kProductBarcode]?.toString() ?? '',
-      kProductName: product[kProductName]?.toString() ?? '',
-      kProductPrice: _parseDouble(product[kProductPrice]) ?? 0.0,
-      kProductQuantity: _parseInt(product[kProductQuantity]) ?? 0,
-      kProductImageUrl:
-          product[kProductImageUrl]?.toString() ?? '', // Include image URL
+      kProductItemId: productItem[kProductItemId]?.toString() ?? '',
+      kProductId: productItem[kProductItemProductId]?.toString() ?? '',
+      kProductBarcode: productItem[kProductBarcode]?.toString() ?? '',
+      kProductName: productItem[kProductName]?.toString() ?? '',
+      kProductPrice: _parseDouble(productItem[kProductPrice]) ?? 0.0,
+      kProductItemQuantity: _parseInt(productItem[kProductItemQuantity]) ?? 0,
+      kProductItemBuyPrice:
+          _parseDouble(productItem[kProductItemBuyPrice]) ?? 0.0,
     };
 
     Navigator.pop(context, result);
@@ -163,103 +276,10 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
       _showErrorSnackBar('You do not have permission to add products'.tr());
       return;
     }
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    final quantityController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (dialogContext) {
-        bool isAdding = false;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            ColorScheme colorScheme = Theme.of(context).colorScheme;
-            return AlertDialog(
-              title: Text('Add Product'.tr()),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(labelText: 'Product Name'.tr()),
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: priceController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: 'Price'.tr()),
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: quantityController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: 'Quantity'.tr()),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Cancel'.tr(),
-                    style: TextStyle(color: colorScheme.primary),
-                  ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                  ),
-                  onPressed: () async {
-                    final name = nameController.text.trim();
-                    final price = double.tryParse(priceController.text);
-                    final quantity = int.tryParse(quantityController.text);
-
-                    if (name.isEmpty || price == null || quantity == null) {
-                      return;
-                    }
-
-                    // ✅ Handle data here
-                    try {
-                      setDialogState(() {
-                        isAdding = true;
-                      });
-
-                      final newProduct = {
-                        kProductId: Uuid().v4(),
-                        kProductBarcode: Uuid().v4(),
-                        kProductName: name,
-                        kProductPrice: price.toString(),
-                        kProductQuantity: quantity.toString(),
-                      };
-
-                      await gSheetService.addProduct(newProduct);
-                      _showSuccessSnackBar('Product added successfully'.tr());
-                      _loadProducts();
-                    } catch (e) {
-                      log("error when upload new product ");
-                    }
-                    setDialogState(() {
-                      isAdding = false;
-                    });
-
-                    Navigator.pop(dialogContext);
-                  },
-                  child: isAdding
-                      ? SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: colorScheme.onPrimary,
-                          ),
-                        )
-                      : Text('Add'.tr()),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => ProductDialog(onSave: () => _loadProducts()),
     );
   }
 
@@ -286,6 +306,11 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
         foregroundColor: colorScheme.onBackground,
         actions: [
           IconButton(
+            icon: Icon(Icons.qr_code_scanner, color: colorScheme.primary),
+            tooltip: 'Scan Barcode'.tr(),
+            onPressed: _scanBarcode,
+          ),
+          IconButton(
             icon: Icon(Icons.refresh, color: colorScheme.primary),
             onPressed: _loadProducts,
           ),
@@ -298,7 +323,7 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
               controller: searchController,
               autofocus: false,
               decoration: InputDecoration(
-                hintText: 'Search by name'.tr(),
+                hintText: 'Search by name or barcode'.tr(),
                 prefixIcon: Icon(Icons.search, color: colorScheme.primary),
                 suffixIcon: searchController.text.isNotEmpty
                     ? IconButton(
@@ -379,7 +404,7 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
       );
     }
 
-    if (filteredProducts.isEmpty) {
+    if (displayItems.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -418,32 +443,27 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: filteredProducts.length,
+      itemCount: displayItems.length,
       itemBuilder: (context, index) {
-        final product = filteredProducts[index];
-        return product[kProductId] != null &&
-                product[kProductId].toString().isNotEmpty &&
-                product[kProductBarcode] != null &&
-                product[kProductBarcode].toString().isNotEmpty &&
-                product[kProductName] != null &&
-                product[kProductName].toString().isNotEmpty &&
-                product[kProductPrice] != null &&
-                product[kProductPrice].toString().isNotEmpty &&
-                product[kProductQuantity] != null &&
-                product[kProductQuantity].toString().isNotEmpty
-            ? _buildProductCard(context, product)
-            : const SizedBox.shrink(); // or return nothing;
-        // return _buildProductCard(product);
+        final productItem = displayItems[index];
+        return productItem[kProductItemId] != null &&
+                productItem[kProductItemId].toString().isNotEmpty &&
+                productItem[kProductName] != null &&
+                productItem[kProductName].toString().isNotEmpty
+            ? _buildProductCard(context, productItem)
+            : const SizedBox.shrink();
       },
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Map<String, dynamic> product) {
+  Widget _buildProductCard(
+    BuildContext context,
+    Map<String, dynamic> productItem,
+  ) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
-    final productName = product[kProductName] ?? 'Unknown';
-    final price = product[kProductPrice] ?? '0';
-    final stockQuantity = product[kProductQuantity] ?? '0';
-    final imageUrl = product[kProductImageUrl]?.toString();
+    final productName = productItem[kProductName] ?? 'Unknown';
+    final price = productItem[kProductPrice] ?? '0';
+    final stockQuantity = productItem[kProductItemQuantity] ?? '0';
 
     // Determine stock status
     final stock = _parseInt(stockQuantity) ?? 0;
@@ -461,17 +481,25 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
       color: stock <= 0 ? Colors.red.shade100 : null,
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: stock <= 0 ? () {} : () => _selectProduct(product),
+        onTap: stock <= 0 ? () {} : () => _selectProduct(productItem),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              // Product Image
-              ProductImageWidget(
-                imageUrl: imageUrl,
-                size: 60,
-                fallbackIcon: Icons.inventory_2,
+              // Product Icon (no image in ProductItems)
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.inventory_2,
+                  size: 32,
+                  color: colorScheme.primary,
+                ),
               ),
               const SizedBox(width: 12),
 
@@ -544,6 +572,99 @@ class _SearchItemsScreenState extends State<SearchItemsScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Private Barcode Scanner View for this screen
+class _BarcodeScannerView extends StatefulWidget {
+  const _BarcodeScannerView();
+
+  @override
+  State<_BarcodeScannerView> createState() => _BarcodeScannerViewState();
+}
+
+class _BarcodeScannerViewState extends State<_BarcodeScannerView> {
+  MobileScannerController cameraController = MobileScannerController();
+  bool isScanned = false;
+
+  @override
+  void dispose() {
+    cameraController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Scan Barcode'.tr()),
+        backgroundColor: Colors.transparent,
+        foregroundColor: colorScheme.onBackground,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.flash_on, color: colorScheme.primary),
+            onPressed: () => cameraController.toggleTorch(),
+          ),
+          IconButton(
+            icon: Icon(Icons.flip_camera_ios, color: colorScheme.primary),
+            onPressed: () => cameraController.switchCamera(),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: cameraController,
+            onDetect: (capture) {
+              if (isScanned) return;
+
+              final List<Barcode> barcodes = capture.barcodes;
+              if (barcodes.isNotEmpty) {
+                final barcode = barcodes.first.rawValue;
+                if (barcode != null) {
+                  setState(() => isScanned = true);
+                  Navigator.pop(context, barcode);
+                }
+              }
+            },
+          ),
+          // Overlay with scan area indicator
+          Center(
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                border: Border.all(color: colorScheme.primary, width: 3),
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+          // Instructions
+          Positioned(
+            bottom: 80,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Text(
+                  'Point camera at barcode'.tr(),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

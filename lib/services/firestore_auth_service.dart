@@ -573,10 +573,12 @@ class FirestoreAuthService {
 
       // Check if user is active
       final isActive = userData[kEmployeeIsActive] ?? true;
+
+      // Allow inactive employees to login regardless of status
+      // valid login leads to PendingActivationView if inactive
       if (!isActive) {
-        log('❌ User account is inactive: $username');
-        throw Exception(
-          'Account is inactive. Please contact your administrator.',
+        log(
+          '⚠️ Account is inactive: $username (allowing login for pending view)',
         );
       }
 
@@ -593,7 +595,7 @@ class FirestoreAuthService {
         // Save employee data locally (No token required anymore)
         await _saveEmployeeLocalData(userData, userDoc.id);
       } else {
-        // Save manager data locally
+        // Save manager data locally (including isActive status)
         await _saveManagerLocalData(userData);
       }
 
@@ -648,6 +650,10 @@ class FirestoreAuthService {
     await CacheHelper.saveData(kEmail, employeeData[kEmployeeManagerEmail]);
     await CacheHelper.saveData(kIsLogin, true);
     await CacheHelper.saveData(kUserType, kUserTypeEmployee);
+
+    // Save employee's active status for pending activation check
+    final isActive = employeeData[kEmployeeIsActive] ?? false;
+    await CacheHelper.saveData(kPrefEmployeeIsActive, isActive);
 
     // Store permissions for role-based access control
     final permissions =
@@ -704,7 +710,11 @@ class FirestoreAuthService {
     await CacheHelper.saveData(kIsLogin, true);
     await CacheHelper.saveData(kUserType, kUserTypeManager);
 
-    log('✅ Saved manager data locally');
+    // Save manager's active status for pending activation check
+    final isActive = managerData[kEmployeeIsActive] ?? false;
+    await CacheHelper.saveData(kPrefManagerIsActive, isActive);
+
+    log('✅ Saved manager data locally (isActive: $isActive)');
   }
 
   // ==================== EMPLOYEE MANAGEMENT ====================
@@ -1080,20 +1090,13 @@ class FirestoreAuthService {
 
   // ==================== LOGOUT & SESSION ====================
 
-  /// Logout user
+  /// Logout user - clears all cached session data
   Future<void> logout() async {
     try {
-      await CacheHelper.saveData(kIsLogin, false);
-      await CacheHelper.saveData(kUserType, null);
-      await CacheHelper.saveData(kUsername, null);
-      await CacheHelper.saveData(kEmail, null);
-      await CacheHelper.saveData(kDisplayName, null);
-      await CacheHelper.saveData('ManagerEmail', null);
-      await CacheHelper.saveData('Roles', null);
-      await CacheHelper.saveData('Permissions', null);
-      await CacheHelper.saveData(kEmployeeId, null);
+      // Clear all SharedPreferences data to ensure complete logout
+      await CacheHelper.clear();
 
-      log('✅ Logout successful');
+      log('✅ Logout successful - all cache cleared');
     } catch (e) {
       log('❌ Logout error: $e');
     }

@@ -25,6 +25,13 @@ import 'package:gdrive_tutorial/features/authentication/presentation/views/logou
 import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:gdrive_tutorial/features/manager/presentation/view/widgets/credential_screen.dart';
 
+// Invoice imports
+import 'package:gdrive_tutorial/features/invoice/data/api/pdf_api.dart';
+import 'package:gdrive_tutorial/features/invoice/data/api/pdf_invoice_api.dart';
+import 'package:gdrive_tutorial/features/invoice/data/model/invoice.dart';
+import 'package:gdrive_tutorial/features/invoice/data/model/customer.dart';
+import 'package:gdrive_tutorial/features/invoice/data/model/supplier.dart';
+
 class ManagerScreen extends StatefulWidget {
   static const String id = 'manager_screen';
   const ManagerScreen({super.key});
@@ -38,6 +45,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
 
   bool isLoading = false;
   List<Map<String, dynamic>> products = [];
+  List<Map<String, dynamic>> productItems = []; // Product batches
   List<Map<String, dynamic>> allSales = [];
   List<Map<String, dynamic>> employees = [];
   List<Map<String, dynamic>> activeEmployees = [];
@@ -54,12 +62,13 @@ class _ManagerScreenState extends State<ManagerScreen> {
   @override
   void initState() {
     super.initState();
-    _checkCredentialsAndLoad();
+    _checkStatusAndCredentials();
     // Use a timer for periodic refresh instead of StreamBuilder in build()
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => _fetchData(),
-    );
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_isManagerActive) {
+        _fetchData();
+      }
+    });
   }
 
   @override
@@ -68,7 +77,23 @@ class _ManagerScreenState extends State<ManagerScreen> {
     super.dispose();
   }
 
-  Future<void> _checkCredentialsAndLoad() async {
+  bool _isManagerActive = true; // Default to true for backward compatibility
+
+  Future<void> _checkStatusAndCredentials() async {
+    // Check if manager is active
+    final isActive = CacheHelper.getData(kPrefManagerIsActive);
+
+    // If explicitly false, set to inactive. If null, assume true (for legacy)
+    if (isActive == false) {
+      if (mounted) {
+        setState(() {
+          _isManagerActive = false;
+          isLoading = false;
+        });
+      }
+      return;
+    }
+
     // Check if credentials exist in SharedPreferences
     final spreadsheetId = CacheHelper.getData(kSpreadsheetId) as String?;
     final folderId = CacheHelper.getData(kDriveFolderId) as String?;
@@ -115,32 +140,40 @@ class _ManagerScreenState extends State<ManagerScreen> {
 
   Future<void> _fetchData() async {
     try {
-      log('� Refreshing dashboard data...');
+      log('🔄 Refreshing dashboard data...');
       final managerEmail = CacheHelper.getData(kEmail);
       if (managerEmail == null) return;
 
       // Parallel fetch for better performance
       final results = await Future.wait([
         gSheetService.getProducts(),
+        gSheetService.getProductItems(), // Fetch product batches
         gSheetService.getSales(),
         _authService.getEmployees(managerEmail),
       ]);
 
       final loadedProducts = results[0];
-      final loadedSales = results[1];
-      final loadedEmployees = results[2];
+      final loadedProductItems = results[1]; // Product batches
+      final loadedSales = results[2];
+      final loadedEmployees = results[3];
 
-      _calculateStats(loadedProducts, loadedSales, loadedEmployees);
+      _calculateStats(
+        loadedProducts,
+        loadedProductItems,
+        loadedSales,
+        loadedEmployees,
+      );
 
       setState(() {
         products = loadedProducts;
+        productItems = loadedProductItems;
         allSales = loadedSales;
         employees = loadedEmployees;
         isLoading = false;
       });
 
       log(
-        '✅ Dashboard refreshed. Sales: ${allSales.length}, Active: ${activeEmployees.length}',
+        '✅ Dashboard refreshed. Products: ${products.length}, ProductItems: ${productItems.length}',
       );
     } catch (e) {
       log('❌ Auto-refresh error: $e');
@@ -149,6 +182,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
 
   void _calculateStats(
     List<Map<String, dynamic>> loadedProducts,
+    List<Map<String, dynamic>> loadedProductItems,
     List<Map<String, dynamic>> loadedSales,
     List<Map<String, dynamic>> loadedEmployees,
   ) {
@@ -160,9 +194,13 @@ class _ManagerScreenState extends State<ManagerScreen> {
     int todayCount = 0;
     List<Map<String, dynamic>> salesToday = [];
 
-    // Process Sales
+    // Process Sales - using new structure with kSalesTotalPrice
     for (var sale in loadedSales) {
-      final saleDateRaw = sale[kSaleCreatedDate]?.toString() ?? '';
+      // Try new field first, fallback to legacy field
+      final saleDateRaw =
+          sale[kSalesCreatedDate]?.toString() ??
+          sale[kSaleCreatedDate]?.toString() ??
+          '';
       if (saleDateRaw.isEmpty) continue;
 
       DateTime? saleDate;
@@ -199,10 +237,19 @@ class _ManagerScreenState extends State<ManagerScreen> {
         // Parsing failed
       }
 
-      final price =
-          double.tryParse(sale[kSaleProductPrice]?.toString() ?? '0') ?? 0;
-      final qty = double.tryParse(sale[kSaleQuantity]?.toString() ?? '0') ?? 0;
-      final total = price * qty;
+      // Use kSalesTotalPrice from new structure, fallback to calculated price*qty for legacy
+      double total = 0;
+      if (sale[kSalesTotalPrice] != null) {
+        // New structure: use total price directly
+        total = double.tryParse(sale[kSalesTotalPrice]?.toString() ?? '0') ?? 0;
+      } else {
+        // Legacy structure: calculate price * qty
+        final price =
+            double.tryParse(sale[kSaleProductPrice]?.toString() ?? '0') ?? 0;
+        final qty =
+            double.tryParse(sale[kSaleQuantity]?.toString() ?? '0') ?? 0;
+        total = price * qty;
+      }
 
       bool isToday = false;
       bool isThisMonth = false;
@@ -233,15 +280,31 @@ class _ManagerScreenState extends State<ManagerScreen> {
       ),
     );
 
-    // Process Low Stock
-    int lowCount = loadedProducts.where((p) {
-      if (mounted) return true;
-      final name = p[kProductName]?.toString() ?? '';
-      if (name.isEmpty) return false; // Ignore empty/header rows
+    // Calculate total quantities per product from ProductItems
+    // Group ProductItems by productId and sum quantities
+    Map<String, int> productQuantities = {};
+    for (var item in loadedProductItems) {
+      final productId = item[kProductItemProductId]?.toString() ?? '';
+      if (productId.isEmpty) continue;
 
-      final qty = int.tryParse(p[kProductQuantity]?.toString() ?? '0') ?? 0;
-      return qty <= kLowStockThreshold;
-    }).length;
+      final qty =
+          int.tryParse(item[kProductItemQuantity]?.toString() ?? '0') ?? 0;
+      productQuantities[productId] = (productQuantities[productId] ?? 0) + qty;
+    }
+
+    // Count products with low stock (total quantity <= kLowStockThreshold)
+    int lowCount = 0;
+    for (var product in loadedProducts) {
+      final productId = product[kProductId]?.toString() ?? '';
+      final name = product[kProductName]?.toString() ?? '';
+      if (name.isEmpty || productId.isEmpty)
+        continue; // Ignore empty/header rows
+
+      final totalQty = productQuantities[productId] ?? 0;
+      if (totalQty <= kLowStockThreshold) {
+        lowCount++;
+      }
+    }
 
     // Process Active Employees
     List<Map<String, dynamic>> activeEmps = [];
@@ -292,10 +355,133 @@ class _ManagerScreenState extends State<ManagerScreen> {
     ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
+  /// Generate PDF invoice for a sale transaction
+  Future<void> _generateInvoice(Map<String, dynamic> sale) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final saleId =
+          sale[kSalesId]?.toString() ?? sale[kSaleId]?.toString() ?? '';
+      final createdDateRaw =
+          sale[kSalesCreatedDate]?.toString() ??
+          sale[kSaleCreatedDate]?.toString() ??
+          '';
+      final employeeUsername =
+          sale[kSalesEmployeeUsername]?.toString() ?? 'Unknown'.tr();
+
+      // Parse sale date
+      DateTime saleDate = DateTime.now();
+      if (createdDateRaw.isNotEmpty) {
+        saleDate = DateTime.tryParse(createdDateRaw) ?? DateTime.now();
+      }
+
+      // Fetch sale items for this sale
+      final saleItems = await gSheetService.getSalesItemsBySaleId(saleId);
+
+      // Build invoice items from sale items
+      List<InvoiceItem> invoiceItems = [];
+
+      if (saleItems.isNotEmpty) {
+        for (var item in saleItems) {
+          final productId = item[kSalesItemProductId]?.toString() ?? '';
+          final quantity =
+              int.tryParse(item[kSalesItemQuantity]?.toString() ?? '0') ?? 0;
+          final price =
+              double.tryParse(item[kSalesItemPrice]?.toString() ?? '0') ?? 0;
+
+          // Find product name
+          String productName = 'Product #$productId';
+          final product = products.firstWhere(
+            (p) => p[kProductId]?.toString() == productId,
+            orElse: () => {},
+          );
+          if (product.isNotEmpty) {
+            productName = product[kProductName]?.toString() ?? productName;
+          }
+
+          invoiceItems.add(
+            InvoiceItem(
+              description: productName,
+              date: saleDate,
+              quantity: quantity,
+              unitPrice: price,
+            ),
+          );
+        }
+      } else {
+        // Legacy structure - single item sale
+        final productName = sale[kSaleProductName]?.toString() ?? 'Product';
+        final quantity =
+            int.tryParse(sale[kSaleQuantity]?.toString() ?? '1') ?? 1;
+        final price =
+            double.tryParse(sale[kSaleProductPrice]?.toString() ?? '0') ?? 0;
+
+        invoiceItems.add(
+          InvoiceItem(
+            description: productName,
+            date: saleDate,
+            quantity: quantity,
+            unitPrice: price,
+          ),
+        );
+      }
+
+      // Get manager info for supplier
+      final managerEmail = CacheHelper.getData(kEmail) ?? 'store@example.com';
+      final managerName = CacheHelper.getData(kDisplayName) ?? 'Store Manager';
+
+      // Get current locale for localized invoice
+      final currentLocale = context.locale.languageCode;
+
+      // Create invoice with localized text
+      final invoice = Invoice(
+        info: InvoiceInfo(
+          description: '${'Sale Transaction'.tr()} #$saleId',
+          number: saleId,
+          date: saleDate,
+          dueDate: saleDate.add(const Duration(days: 7)),
+        ),
+        supplier: Supplier(
+          name: managerName,
+          address: managerEmail,
+          paymentInfo: managerEmail,
+        ),
+        customer: Customer(
+          name: 'Walk-in Customer'.tr(),
+          address: '${'Served by'.tr()}: $employeeUsername',
+        ),
+        items: invoiceItems,
+      );
+
+      // Generate and open PDF with language support
+      final pdfFile = await PdfInvoiceApi.generate(
+        invoice,
+        languageCode: currentLocale,
+      );
+
+      if (mounted) Navigator.pop(context); // Dismiss loading
+
+      await PdfApi.openFile(pdfFile);
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Dismiss loading
+      log('Error generating invoice: $e');
+      _showErrorSnackBar('Failed to generate invoice'.tr());
+    }
+  }
+
   final helloUsername = capitalize(CacheHelper.getData(kUsername));
 
   @override
   Widget build(BuildContext context) {
+    if (!_isManagerActive) {
+      return _buildPendingActivationView();
+    }
+
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     final managerEmail = CacheHelper.getData(kEmail);
 
@@ -594,7 +780,12 @@ class _ManagerScreenState extends State<ManagerScreen> {
             Divider(height: 1, color: colorScheme.onSurface.withOpacity(0.05)),
         itemBuilder: (context, index) {
           final sale = latestSalesToday[index];
-          final saleDateRaw = sale[kSaleCreatedDate]?.toString() ?? '';
+
+          // Try new field first, fallback to legacy
+          final saleDateRaw =
+              sale[kSalesCreatedDate]?.toString() ??
+              sale[kSaleCreatedDate]?.toString() ??
+              '';
           String time = '--:--';
 
           if (saleDateRaw.isNotEmpty) {
@@ -620,33 +811,66 @@ class _ManagerScreenState extends State<ManagerScreen> {
               }
             } catch (_) {}
           }
+
+          // Get display values - support both new and legacy structure
+          final String totalPrice =
+              sale[kSalesTotalPrice]?.toString() ??
+              sale[kSaleProductPrice]?.toString() ??
+              '0';
+          final String saleId =
+              sale[kSalesId]?.toString() ?? sale[kSaleId]?.toString() ?? '';
+
+          // For new structure, show employee name. For legacy, show product name
+          final bool isNewStructure = sale[kSalesTotalPrice] != null;
+
           return ListTile(
             dense: true,
             leading: CircleAvatar(
               backgroundColor: colorScheme.primary.withOpacity(0.1),
               child: Icon(
-                Icons.shopping_cart,
+                Icons.receipt_long,
                 size: 18,
                 color: colorScheme.primary,
               ),
             ),
             title: Text(
-              sale[kSaleProductName] ?? 'Unknown',
+              isNewStructure
+                  ? 'Invoice'.tr() + '#$saleId'
+                  : (sale[kSaleProductName]?.toString() ?? 'Unknown'),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
             ),
             subtitle: Text(
-              "at $time • Qty: ${sale[kSaleQuantity]}",
+              isNewStructure
+                  ? "at $time • by ${sale[kSalesEmployeeUsername] ?? 'Unknown'}"
+                  : "at $time • Qty: ${sale[kSaleQuantity] ?? '-'}",
               style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
             ),
-            trailing: Text(
-              "\$${sale[kSaleProductPrice]}",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "\$$totalPrice",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(
+                    Icons.picture_as_pdf,
+                    color: colorScheme.secondary,
+                    size: 20,
+                  ),
+                  tooltip: 'Generate Invoice'.tr(),
+                  onPressed: () => _generateInvoice(sale),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
           );
         },
@@ -803,4 +1027,117 @@ class _ManagerScreenState extends State<ManagerScreen> {
       ),
     );
   }
+
+  Widget _buildPendingActivationView() {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: colorScheme.background,
+      appBar: AppBar(
+        title: Text('Account Status'.tr()),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, LogoutScreen.id);
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.hourglass_empty_rounded,
+                  size: 64,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Activation Pending'.tr(),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onBackground,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Your account is currently inactive.\nPlease wait for the administrator to activate your account.'
+                    .tr(),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onBackground.withOpacity(0.7),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: 200,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    setState(() => isLoading = true);
+                    // Reload user data to check if active
+                    final username = CacheHelper.getData(kUsername);
+                    if (username != null) {
+                      final userData = await _authService.getUserData(
+                        username,
+                        kUserTypeManager,
+                      );
+                      if (userData != null) {
+                        final isActive = userData[kEmployeeIsActive] ?? false;
+                        await CacheHelper.saveData(
+                          kPrefManagerIsActive,
+                          isActive,
+                        );
+
+                        if (isActive && mounted) {
+                          setState(() => _isManagerActive = true);
+                          _loadProducts();
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Account is still inactive'.tr()),
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    }
+                    if (mounted) setState(() => isLoading = false);
+                  },
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh),
+                  label: Text(
+                    isLoading ? 'Checking...'.tr() : 'Check Status'.tr(),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: colorScheme.primary),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  } // Added closing brace for class logic if needed, wait, this is inside class, so just a method.
 }

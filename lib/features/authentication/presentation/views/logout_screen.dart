@@ -6,6 +6,7 @@ import 'package:gdrive_tutorial/core/helper.dart';
 import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:gdrive_tutorial/core/theme/toggle_theme.dart';
 import 'package:gdrive_tutorial/features/authentication/presentation/views/login_selection_screen.dart';
+import 'package:gdrive_tutorial/services/firestore_auth_service.dart';
 import 'package:provider/provider.dart';
 
 class LogoutScreen extends StatefulWidget {
@@ -21,6 +22,10 @@ class _LogoutScreenState extends State<LogoutScreen> {
   bool isLoading = false;
 
   Future<void> _logout() async {
+    // Clear all cached data before navigating to login screen
+    final authService = FirestoreAuthService();
+    await authService.logout();
+
     if (mounted) {
       Navigator.pushReplacementNamed(context, LoginSelectionScreen.id);
     }

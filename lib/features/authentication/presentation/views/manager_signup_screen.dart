@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-// import 'package:gdrive_tutorial/core/app_theme.dart';
+import 'package:gdrive_tutorial/core/consts.dart';
+import 'package:gdrive_tutorial/core/shared_prefs.dart';
+import 'package:gdrive_tutorial/features/manager/presentation/view/manager_screen.dart';
 import 'package:gdrive_tutorial/services/firestore_auth_service.dart';
 
 class ManagerSignUpScreen extends StatefulWidget {
@@ -46,32 +48,16 @@ class _ManagerSignUpScreenState extends State<ManagerSignUpScreen> {
 
       if (!mounted) return;
 
-      // Show success dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green),
-              SizedBox(width: 8),
-              Text('Registration Sent'),
-            ],
-          ),
-          content: const Text(
-            'Your account has been created successfully. \n\nNote: Your account is currently INACTIVE. Please wait for manual activation by the administrator.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Back to Login
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+      // Save minimal data to cache for pending activation state
+      await CacheHelper.saveData(kEmail, _emailController.text.trim());
+      await CacheHelper.saveData(kUsername, _usernameController.text.trim());
+      await CacheHelper.saveData(kDisplayName, _usernameController.text.trim());
+      await CacheHelper.saveData(kIsLogin, true);
+      await CacheHelper.saveData(kUserType, kUserTypeManager);
+      await CacheHelper.saveData(kPrefManagerIsActive, false); // Not active yet
+
+      // Navigate to ManagerScreen (will show pending activation message)
+      Navigator.of(context).pushReplacementNamed(ManagerScreen.id);
     } catch (e) {
       _showError(e.toString().replaceAll('Exception: ', ''));
     } finally {
