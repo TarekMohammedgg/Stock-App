@@ -158,8 +158,8 @@
 3. **Configure environment**
    - Create a `.env` file in the root directory:
    ```env
-   # Add your environment variables here
-   ```
+      GSHEET_CREDENTIALS
+  ```
 
 4. **Firebase Setup**
    - Add `google-services.json` (Android) to `android/app/`
@@ -280,9 +280,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Tarek Mohammed**
-- GitHub: [@TarekMohammedgg](https://github.com/TarekMohammedgg)
-- LinkedIn: [@tarekmohammed](linkedin.com/in/tarekmohammed)
-
+- GitHub: [@TarekMohammedgg](https://github.com/TarekMohammedgg/TarekMohammedgg)
+- LinkedIn: [@tarekmohammed](https://www.linkedin.com/in/tarekmohammed/)
 ---
 
 ## 🙏 Acknowledgments
