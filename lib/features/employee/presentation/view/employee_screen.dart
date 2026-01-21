@@ -36,6 +36,9 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
 
   MobileScannerController? scannerController;
 
+  // Note controller for transaction notes
+  final TextEditingController _noteController = TextEditingController();
+
   bool isLoading = false;
   bool isScanning = false;
   bool _isEmployeeActive = true;
@@ -59,6 +62,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
   @override
   void dispose() {
     scannerController?.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -205,6 +209,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
           kSalesTotalPrice: totalPrice.toString(),
           kSalesCreatedDate: DateTime.now().toIso8601String(),
           kSalesEmployeeUsername: employeeUsername,
+          kSalesNote: _noteController.text.trim(),
         };
         await gSheetService.addSale(saleData);
 
@@ -276,7 +281,10 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
           _showSuccessSnackBar('Transaction completed successfully'.tr());
           await _productListLock.synchronized(() async {
             if (mounted) {
-              setState(() => selectedProduct = null);
+              setState(() {
+                selectedProduct = null;
+                _noteController.clear();
+              });
 
               // If manager, go back to dashboard
               final String? userType = CacheHelper.getData(kUserType);
@@ -588,6 +596,33 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
     );
   }
 
+  Widget _buildNoteInput() {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: _noteController,
+        maxLines: 2,
+        decoration: InputDecoration(
+          labelText: 'Note (Optional)'.tr(),
+          hintText: 'Add a note for this transaction...'.tr(),
+          prefixIcon: Icon(Icons.note_alt_outlined, color: colorScheme.primary),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          filled: true,
+          fillColor: colorScheme.surface,
+        ),
+      ),
+    );
+  }
+
   Widget _buildAddButton() {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
@@ -743,6 +778,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
             _buildProductPreview(),
             const SizedBox(height: 8),
             _buildTotalPrice(),
+            _buildNoteInput(),
             _buildAddButton(),
           ],
         ),

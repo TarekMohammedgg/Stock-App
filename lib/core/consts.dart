@@ -128,12 +128,14 @@ const String kSalesId = 'Sales Id';
 const String kSalesTotalPrice = 'Sales Total Price';
 const String kSalesCreatedDate = 'Created Date';
 const String kSalesEmployeeUsername = 'Employee Username';
+const String kSalesNote = 'Note';
 
 const List<String> kSalesHeaders = [
   kSalesId,
   kSalesTotalPrice,
   kSalesCreatedDate,
   kSalesEmployeeUsername,
+  kSalesNote,
 ];
 
 // ==================== SalesItems Columns ====================
