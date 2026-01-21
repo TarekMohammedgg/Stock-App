@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:device_preview/device_preview.dart';
 import 'package:gdrive_tutorial/core/internet_connectino_helper.dart';
 import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:gdrive_tutorial/core/theme/toggle_theme.dart';
@@ -33,13 +34,16 @@ void main() async {
   final themeProvider = ThemeProvider();
 
   runApp(
-    EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('ar')],
-      path: 'assets/translations',
-      fallbackLocale: const Locale('en'),
-      child: ChangeNotifierProvider(
-        create: (_) => themeProvider,
-        child: const MyApp(),
+    DevicePreview(
+      enabled: true,
+      builder: (context) => EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('ar')],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('en'),
+        child: ChangeNotifierProvider(
+          create: (_) => themeProvider,
+          child: const MyApp(),
+        ),
       ),
     ),
   );
@@ -58,10 +62,12 @@ class MyApp extends StatelessWidget {
           localizationsDelegates: context.localizationDelegates,
           supportedLocales: context.supportedLocales,
           locale: context.locale,
+          useInheritedMediaQuery: true,
           builder: (context, child) {
+            final devicePreviewChild = DevicePreview.appBuilder(context, child);
             return Stack(
               children: [
-                child!,
+                devicePreviewChild,
                 StreamBuilder<bool>(
                   stream: NetworkService().internetStatusStream,
                   initialData: true,

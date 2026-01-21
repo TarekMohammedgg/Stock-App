@@ -5,27 +5,40 @@ import 'package:gdrive_tutorial/core/consts.dart';
 import 'package:gdrive_tutorial/core/shared_prefs.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'package:flutter/foundation.dart'; // For kIsWeb
+
 Future<String> getDeviceNameID() async {
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
   String? deviceName;
   String? deviceId;
 
-  if (Platform.isAndroid) {
-    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-    deviceName = "${androidInfo.name} ${androidInfo.model}";
-    deviceId = androidInfo.id; // Unique Android ID
-  } else if (Platform.isIOS) {
-    IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
-    deviceName = iosInfo.utsname.machine;
-    deviceId = iosInfo.identifierForVendor; // Unique iOS ID
-  } else if (Platform.isWindows) {
-    WindowsDeviceInfo windowsInfo = await deviceInfo.windowsInfo;
-    deviceName = windowsInfo.computerName;
-    deviceId = windowsInfo.deviceId; // Unique Windows device ID
+  try {
+    if (kIsWeb) {
+      WebBrowserInfo webInfo = await deviceInfo.webBrowserInfo;
+      deviceName = "${webInfo.browserName.name} on ${webInfo.platform}";
+      deviceId = webInfo.userAgent ?? 'Unknown Web User Agent';
+    } else if (Platform.isAndroid) {
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      deviceName = "${androidInfo.brand} ${androidInfo.model}";
+      deviceId = androidInfo.id; // Unique Android ID
+    } else if (Platform.isIOS) {
+      IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+      deviceName = iosInfo.utsname.machine;
+      deviceId = iosInfo.identifierForVendor; // Unique iOS ID
+    } else if (Platform.isWindows) {
+      WindowsDeviceInfo windowsInfo = await deviceInfo.windowsInfo;
+      deviceName = windowsInfo.computerName;
+      deviceId = windowsInfo.deviceId; // Unique Windows device ID
+    }
+  } catch (e) {
+    log("Error getting device info: $e");
+    deviceName = "Unknown Device";
+    deviceId = "UnknownID";
   }
 
-  await CacheHelper.saveData(kDeviceInfoNameId, "$deviceName $deviceId");
-  return "$deviceName $deviceId";
+  final finalId = "$deviceName ${deviceId ?? ''}".trim();
+  await CacheHelper.saveData(kDeviceInfoNameId, finalId);
+  return finalId;
 }
 
 String formatDate(DateTime date) =>

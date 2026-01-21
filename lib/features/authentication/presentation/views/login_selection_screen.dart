@@ -183,7 +183,7 @@ class LoginSelectionScreen extends StatelessWidget {
                     color: colorScheme.onPrimary,
                   ),
                   onTap: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const EmployeeLoginScreen(),
